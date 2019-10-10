@@ -1,0 +1,3 @@
+Update .gitignore
+
+I recommend removing ```Icon?``` from the gitignore as it matches files and directories in a case-insensitive way named "icons" or "icon1" etc
