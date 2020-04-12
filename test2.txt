@@ -1,6 +1,0 @@
-Update .gitignore
-
-I recommend removing ```Icon?``` from the gitignore as it matches files and directories in a case-insensitive way named "icons" or "icon1" etc
-Remove `max-age` from logged-in responses
-
-Use `cache-control: no-cache, no-store, must-revalidate` when on the WordPress admin and logged-in
