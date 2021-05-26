@@ -685,7 +685,10 @@ function bbp_topic_engagements_metabox( $post ) {
 
 		// Users were found
 		if ( ! empty( $user_ids ) && bbp_has_users( $args ) ) :
-			bbp_metabox_user_links();
+
+			while ( bbp_users() ) : bbp_the_user();
+				echo get_avatar( bbp_get_user_id(), 32 );
+			endwhile;
 
 		// No users
 		else :
@@ -718,7 +721,10 @@ function bbp_topic_favorites_metabox( $post ) {
 
 		// Users were found
 		if ( ! empty( $user_ids ) && bbp_has_users( $args ) ) :
-			bbp_metabox_user_links();
+
+			while ( bbp_users() ) : bbp_the_user();
+				echo get_avatar( bbp_get_user_id(), 32 );
+			endwhile;
 
 		// No users
 		else :
@@ -731,24 +737,19 @@ function bbp_topic_favorites_metabox( $post ) {
 }
 
 /**
- * See who is subscribed to a topic
+ * See who subscribed to a topic
  *
  * @since 2.6.0 bbPress (r6197)
  * @since 2.6.0 bbPress (r6333) Updated to use BBP_User_Query
  */
 function bbp_topic_subscriptions_metabox( $post ) {
 
-	// Current user subscription
-	$input_value = bbp_is_user_subscribed( bbp_get_current_user_id(), $post->ID )
-		? 'bbp_subscribe' // maintain existing subscription
-		: '';             // do not add or remove subscription
-
 	// Get user IDs
 	$user_ids = bbp_get_subscribers( $post->ID );
 
 	// Output
 	?>
-	<input name="bbp_topic_subscription" id="bbp_topic_subscription" type="hidden" value="<?php echo esc_attr( $input_value ); ?>" />
+	<input name="bbp_topic_subscription" id="bbp_topic_subscription" type="hidden" value="bbp_subscribe" <?php bbp_form_topic_subscribed(); ?> />
 	<p><?php
 
 		// Relationships
@@ -758,7 +759,10 @@ function bbp_topic_subscriptions_metabox( $post ) {
 
 		// Users were found
 		if ( ! empty( $user_ids ) && bbp_has_users( $args ) ) :
-			bbp_metabox_user_links();
+
+			while ( bbp_users() ) : bbp_the_user();
+				echo get_avatar( bbp_get_user_id(), 32 );
+			endwhile;
 
 		// No users
 		else :
@@ -771,7 +775,7 @@ function bbp_topic_subscriptions_metabox( $post ) {
 }
 
 /**
- * See who is subscribed to a forum
+ * See who subscribed to a forum
  *
  * @since 2.6.0 bbPress (r6197)
  * @since 2.6.0 bbPress (r6333) Updated to use BBP_User_Query
@@ -791,7 +795,10 @@ function bbp_forum_subscriptions_metabox( $post ) {
 
 		// Users were found
 		if ( ! empty( $user_ids ) && bbp_has_users( $args ) ) :
-			bbp_metabox_user_links();
+
+			while ( bbp_users() ) : bbp_the_user();
+				echo get_avatar( bbp_get_user_id(), 32 );
+			endwhile;
 
 		// No users
 		else :
@@ -801,32 +808,4 @@ function bbp_forum_subscriptions_metabox( $post ) {
 	?></p><?php
 
 	do_action( 'bbp_forum_subscriptions_metabox', $post );
-}
-
-/**
- * Loop through queried metabox users, and output links to their avatars
- *
- * Developers Note: This function may change in a future release to include
- * additional actions, so do not use this function in any third party plugin.
- *
- * @since 2.6.0 bbPress (r6913)
- */
-function bbp_metabox_user_links() {
-
-	// Loop through users
-	while ( bbp_users() ) {
-
-		// Set the iterator
-		bbp_the_user();
-
-		// Get the user ID, URL, and Avatar
-		$user_id     = bbp_get_user_id();
-		$user_url    = bbp_get_user_profile_url( $user_id );
-		$user_avatar = get_avatar( $user_id, 32, '', '', array(
-			'force_display' => true
-		) );
-
-		// Output a link to the user avatar
-		echo '<a href="' . esc_url( $user_url ) . '">' . $user_avatar . '</a>';
-	}
 }

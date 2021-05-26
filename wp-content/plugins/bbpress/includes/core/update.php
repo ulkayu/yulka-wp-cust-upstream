@@ -338,62 +338,41 @@ function bbp_version_updater() {
 
 		/** 2.6 Branch ********************************************************/
 
-		// Smaller installs run the upgrades directly
-		if ( ! bbp_is_large_install() ) {
+		// 2.6 Alpha
+		if ( $raw_db_version < 261 ) {
 
 			/**
 			 * Upgrade user favorites and subscriptions
+			 *
+			 * @link https://bbpress.trac.wordpress.org/ticket/2959
 			 */
-			if ( $raw_db_version < 261 ) {
+			if ( ! bbp_is_large_install() ) {
 				bbp_admin_upgrade_user_favorites();
 				bbp_admin_upgrade_user_topic_subscriptions();
 				bbp_admin_upgrade_user_forum_subscriptions();
+			} else {
+				update_option( '_bbp_db_upgrade_skipped', $raw_db_version );
+
+				// Set strategy to pre-2.6 on large network
+				update_option( '_bbp_engagements_strategy', 'user' );
 			}
+		}
+
+		// 2.6 Beta/RC/GM
+		if ( $raw_db_version < 262 ) {
 
 			/**
 			 * Upgrade user engagements
+			 *
+			 * @link https://bbpress.trac.wordpress.org/ticket/3068
 			 */
-			if ( $raw_db_version < 262 ) {
+			if ( ! bbp_is_large_install() ) {
 				bbp_admin_upgrade_user_engagements();
-			}
-
-			/**
-			 * Repair forum hidden reply count
-			 */
-			if ( $raw_db_version < 263 ) {
-				bbp_admin_repair_forum_hidden_reply_count();
-			}
-
-		// Large installs require manual intervention
-		} else {
-
-			/**
-			 * Upgrade user favorites and subscriptions
-			 */
-			if ( $raw_db_version < 261 ) {
-				bbp_add_pending_upgrade( 'bbp-user-favorites-move' );
-				bbp_add_pending_upgrade( 'bbp-user-topic-subscriptions-move' );
-				bbp_add_pending_upgrade( 'bbp-user-forum-subscriptions-move' );
+			} else {
+				update_option( '_bbp_db_upgrade_skipped', $raw_db_version );
 
 				// Set strategy to pre-2.6 on large network
 				update_option( '_bbp_engagements_strategy', 'user' );
-			}
-
-			/**
-			 * Upgrade user engagements
-			 */
-			if ( $raw_db_version < 262 ) {
-				bbp_add_pending_upgrade( 'bbp-user-topic-engagements-move' );
-
-				// Set strategy to pre-2.6 on large network
-				update_option( '_bbp_engagements_strategy', 'user' );
-			}
-
-			/**
-			 * Upgrade user engagements
-			 */
-			if ( $raw_db_version < 263 ) {
-				bbp_add_pending_upgrade( 'bbp-forum-hidden-replies' );
 			}
 		}
 	}
@@ -510,122 +489,4 @@ function bbp_make_current_user_keymaster() {
 
 	// Reload the current user so caps apply immediately
 	wp_get_current_user();
-}
-
-/** Pending Upgrades **********************************************************/
-
-/**
- * Return the number of pending upgrades
- *
- * @since 2.6.0 bbPress (r6895)
- *
- * @param string $type Type of pending upgrades (upgrade|repair|empty)
- *
- * @return int
- */
-function bbp_get_pending_upgrade_count( $type = '' ) {
-	return count( (array) bbp_get_pending_upgrades( $type ) );
-}
-
-/**
- * Return an array of pending upgrades
- *
- * @since 2.6.0 bbPress (r6895)
- *
- * @param string $type Type of pending upgrades (upgrade|repair|empty)
- *
- * @return array
- */
-function bbp_get_pending_upgrades( $type = '' ) {
-
-	// Get the pending upgrades
-	$retval = (array) get_option( '_bbp_db_pending_upgrades', array() );
-
-	// Looking for a specific type?
-	if ( ! empty( $type ) ) {
-		$tools   = bbp_get_admin_repair_tools( $type );
-		$plucked = array_keys( wp_list_pluck( $tools, 'type' ) );
-		$retval  = array_intersect( $retval, $plucked );
-	}
-
-	return (array) $retval;
-}
-
-/**
- * Add an upgrade ID to pending upgrades array
- *
- * @since 2.6.0 bbPress (r6895)
- *
- * @param string $upgrade_id
- */
-function bbp_add_pending_upgrade( $upgrade_id = '' ) {
-
-	// Get the pending upgrades option
-	$pending = bbp_get_pending_upgrades();
-
-	// Maybe add upgrade ID to end of pending array
-	if ( false === array_search( $upgrade_id, $pending, true ) ) {
-		array_push( $pending, $upgrade_id );
-	}
-
-	// Update and return
-	return update_option( '_bbp_db_pending_upgrades', $pending );
-}
-
-/**
- * Add an upgrade ID to pending upgrades array
- *
- * @since 2.6.0 bbPress (r6895)
- *
- * @param string $upgrade_id
- */
-function bbp_remove_pending_upgrade( $upgrade_id = '' ) {
-
-	// Get the pending upgrades option
-	$pending = bbp_get_pending_upgrades();
-
-	// Look for this upgrade ID
-	$index = array_search( $upgrade_id, $pending, true );
-
-	// Maybe remove upgrade ID from pending array
-	if ( false !== $index ) {
-		unset( $pending[ $index ] );
-	}
-
-	// Update and return
-	return update_option( '_bbp_db_pending_upgrades', $pending );
-}
-
-/**
- * Delete all pending upgrades
- *
- * @since 2.6.0 bbPress (r6895)
- */
-function bbp_clear_pending_upgrades() {
-	return delete_option( '_bbp_db_pending_upgrades' );
-}
-
-/**
- * Maybe append an upgrade count to a string
- *
- * @since 2.6.0 bbPress (r6896)
- *
- * @param string $string Text to append count to
- * @param string $type   Type of pending upgrades (upgrade|repair|empty)
- *
- * @return string
- */
-function bbp_maybe_append_pending_upgrade_count( $string = '', $type = '' ) {
-
-	// Look for an upgrade count
-	$count = bbp_get_pending_upgrade_count( $type );
-
-	// Append the count to the string
-	if ( ! empty( $count ) ) {
-		$suffix = ' <span class="awaiting-mod count-' . absint( $count ) . '"><span class="pending-count">' . bbp_number_format( $count ) . '</span></span>';
-		$string = "{$string}{$suffix}";
-	}
-
-	// Return the string, maybe with a count
-	return $string;
 }

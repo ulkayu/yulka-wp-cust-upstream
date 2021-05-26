@@ -969,7 +969,6 @@ function bbp_body_class( $wp_classes, $custom_classes = false ) {
 
 	} elseif ( bbp_is_single_view() ) {
 		$bbp_classes[] = 'bbp-view';
-		$bbp_classes[] = 'bbp-view-' . bbp_get_view_id();
 
 	/** User ******************************************************************/
 
@@ -1467,22 +1466,15 @@ function bbp_dropdown( $args = array() ) {
 
 		// Parse arguments against default values
 		$r = bbp_parse_args( $args, array(
-
-			// Support for get_posts()
 			'post_type'          => bbp_get_forum_post_type(),
 			'post_parent'        => null,
 			'post_status'        => null,
 			'selected'           => 0,
-			'include'            => array(),
 			'exclude'            => array(),
 			'numberposts'        => -1,
 			'orderby'            => 'menu_order title',
 			'order'              => 'ASC',
-
-			// Preloaded content
 			'posts'              => array(),
-
-			// Custom hierarchy walkers
 			'walker'             => '',
 
 			// Output-related
@@ -1507,11 +1499,6 @@ function bbp_dropdown( $args = array() ) {
 		}
 
 		// Force array
-		if ( ! empty( $r['include'] ) && ! is_array( $r['include'] ) ) {
-			$r['include'] = explode( ',', $r['include'] );
-		}
-
-		// Force array
 		if ( ! empty( $r['exclude'] ) && ! is_array( $r['exclude'] ) ) {
 			$r['exclude'] = explode( ',', $r['exclude'] );
 		}
@@ -1528,7 +1515,6 @@ function bbp_dropdown( $args = array() ) {
 				'post_type'   => $r['post_type'],
 				'post_status' => $r['post_status'],
 				'post_parent' => $r['post_parent'],
-				'include'     => $r['include'],
 				'exclude'     => $r['exclude'],
 				'numberposts' => $r['numberposts'],
 				'orderby'     => $r['orderby'],
@@ -1993,21 +1979,19 @@ function bbp_view_id( $view = '' ) {
 	function bbp_get_view_id( $view = '' ) {
 		$bbp = bbpress();
 
-		// User supplied string
 		if ( ! empty( $view ) ) {
-			$view_id = sanitize_key( $view );
-
-		// Current view ID
+			$view = sanitize_title( $view );
 		} elseif ( ! empty( $bbp->current_view_id ) ) {
-			$view_id = $bbp->current_view_id;
-
-		// Querying for view
+			$view = $bbp->current_view_id;
 		} else {
-			$view_id = get_query_var( bbp_get_view_rewrite_id() );
+			$view = get_query_var( bbp_get_view_rewrite_id() );
 		}
 
-		// Filter & return
-		return apply_filters( 'bbp_get_view_id', $view_id, $view );
+		if ( array_key_exists( $view, $bbp->views ) ) {
+			return $view;
+		}
+
+		return false;
 	}
 
 /**

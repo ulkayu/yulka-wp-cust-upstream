@@ -19,32 +19,16 @@ defined( 'ABSPATH' ) || exit;
 function bbp_admin_upgrade_page() {
 
 	// Get the registered upgrade tools
-	$tools = bbp_admin_repair_list( 'upgrade' );
-
-	// Orderby
-	$orderby = ! empty( $_GET['orderby'] )
-		? sanitize_key( $_GET['orderby'] )
-		: 'priority';
-
-	// Order
-	$order = ! empty( $_GET['order'] ) && in_array( strtolower( $_GET['order'] ), array( 'asc', 'desc' ), true )
-		? strtolower( $_GET['order'] )
-		: 'asc';
-
-	// New order
-	$new_order = ( 'desc' === $order )
-		? 'asc'
-		: 'desc'; ?>
+	$tools = bbp_admin_repair_list( 'upgrade' ); ?>
 
 	<div class="wrap">
-		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
-		<hr class="wp-header-end">
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( 'bbp-upgrade' ); ?></h2>
+		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Upgrade Forums', 'bbpress' ) ); ?></h2>
 
 		<p><?php esc_html_e( 'As bbPress improves, occasionally database upgrades are required but some forums are too large to upgrade automatically. Use the tools below to manually run upgrade routines.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 upgrade at a time.', 'bbpress' ); ?></p>
 
-		<?php bbp_admin_repair_tool_status_filters(); ?>
+		<?php bbp_admin_repair_tool_overhead_filters(); ?>
 
 		<form class="settings" method="get" action="">
 
@@ -66,9 +50,6 @@ function bbp_admin_upgrade_page() {
 
 					<?php bbp_admin_repair_list_components_filter(); ?>
 
-					<?php bbp_admin_repair_list_versions_filter(); ?>
-
-					<input type="submit" name="filter_action" id="components-submit" class="button" value="<?php esc_html_e( 'Filter', 'bbpress' ); ?>">
 				</div>
 				<br class="clear">
 			</div>
@@ -81,28 +62,9 @@ function bbp_admin_upgrade_page() {
 							</label>
 							<input id="cb-select-all-1" type="checkbox">
 						</td>
-						<th scope="col" id="description" class="manage-column column-primary column-description sortable <?php echo ( 'priority' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
-							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
-									'orderby' => 'priority',
-									'order'   => $new_order
-								) ) ); ?>"><span><?php esc_html_e( 'Description', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
-							</a>
-						</th>
-						<th scope="col" id="version" class="manage-column column-version sortable <?php echo ( 'version' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
-							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
-									'orderby' => 'version',
-									'order'   => $new_order
-								) ) ); ?>"><span><?php esc_html_e( 'Version', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
-							</a>
-						</th>
+						<th scope="col" id="description" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
 						<th scope="col" id="components" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
-						<th scope="col" id="overhead" class="manage-column column-overhead sortable <?php echo ( 'overhead' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
-							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
-									'orderby' => 'overhead',
-									'order'   => $new_order
-								) ) ); ?>"><span><?php esc_html_e( 'Overhead', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
-							</a>
-						</th>
+						<th scope="col" id="overhead" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>
 				</thead>
 
@@ -122,7 +84,7 @@ function bbp_admin_upgrade_page() {
 
 										// Optional description
 										if ( ! empty( $item['description'] ) ) :
-											echo '<p class="description">' . esc_html( $item['description'] ) . '</p>';
+											echo esc_html( $item['description'] );
 										endif;
 
 									?><div class="row-actions hide-if-no-js">
@@ -134,15 +96,8 @@ function bbp_admin_upgrade_page() {
 										<span class="screen-reader-text"><?php esc_html_e( 'Show more details', 'bbpress' ); ?></span>
 									</button>
 								</td>
-								<td class="column-version desc" data-colname="<?php esc_html_e( 'Version', 'bbpress' ); ?>">
-									<div class="bbp-tool-version">
-
-										<?php echo implode( ', ', bbp_get_admin_repair_tool_version( $item ) ); ?>
-
-									</div>
-								</td>
 								<td class="column-components desc" data-colname="<?php esc_html_e( 'Components', 'bbpress' ); ?>">
-									<div class="bbp-tool-components">
+									<div class="bbp-tool-overhead">
 
 										<?php echo implode( ', ', bbp_get_admin_repair_tool_components( $item ) ); ?>
 
@@ -179,7 +134,6 @@ function bbp_admin_upgrade_page() {
 							<input id="cb-select-all-2" type="checkbox">
 						</td>
 						<th scope="col" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
-						<th scope="col" class="manage-column column-version"><?php esc_html_e( 'Version', 'bbpress' ); ?></th>
 						<th scope="col" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
 						<th scope="col" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>
@@ -246,7 +200,7 @@ function bbp_admin_upgrade_user_engagements() {
 	}
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d engagement upgraded.', 'Complete! %d engagements upgraded.', $engagements, 'bbpress' ), bbp_number_format( $engagements ) );
+	$result = sprintf( _n( 'Complete! %d engagements upgraded.', 'Complete! %d engagements upgraded.', $engagements, 'bbpress' ), $engagements );
 
 	return array( 0, sprintf( $statement, $result ) );
 }
@@ -444,7 +398,7 @@ function bbp_admin_upgrade_user_favorites() {
 	unset( $favs, $added, $post_ids );
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d favorite upgraded.', 'Complete! %d favorites upgraded.', $total, 'bbpress' ), bbp_number_format( $total ) );
+	$result = sprintf( _n( 'Complete! %d favorite upgraded.', 'Complete! %d favorites upgraded.', $total, 'bbpress' ), $total );
 
 	return array( 0, sprintf( $statement, $result ) );
 }
@@ -504,7 +458,7 @@ function bbp_admin_upgrade_user_topic_subscriptions() {
 	unset( $subs, $added, $post_ids );
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d topic subscription upgraded.', 'Complete! %d topic subscriptions upgraded.', $total, 'bbpress' ), bbp_number_format( $total ) );
+	$result = sprintf( _n( 'Complete! %d topic subscription upgraded.', 'Complete! %d topic subscriptions upgraded.', $total, 'bbpress' ), $total );
 
 	return array( 0, sprintf( $statement, $result ) );
 }
@@ -564,7 +518,7 @@ function bbp_admin_upgrade_user_forum_subscriptions() {
 	unset( $subs, $added, $post_ids );
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d forum subscription upgraded.', 'Complete! %d forum subscriptions upgraded.', $total, 'bbpress' ), bbp_number_format( $total ) );
+	$result = sprintf( _n( 'Complete! %d forum subscription upgraded.', 'Complete! %d forum subscriptions upgraded.', $total, 'bbpress' ), $total );
 
 	return array( 0, sprintf( $statement, $result ) );
 }
@@ -600,7 +554,7 @@ function bbp_admin_upgrade_remove_favorites_from_usermeta() {
 	$total = count( $favs );
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d favorite deleted.', 'Complete! %d favorites deleted.', $total, 'bbpress' ), bbp_number_format( $total ) );
+	$result = sprintf( _n( 'Complete! %d favorites deleted.', 'Complete! %d favorites deleted.', $total, 'bbpress' ), $total );
 
 	return array( 0, sprintf( $statement, $result ) );
 }
@@ -636,7 +590,7 @@ function bbp_admin_upgrade_remove_topic_subscriptions_from_usermeta() {
 	$total = count( $subs );
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d topic subscription deleted.', 'Complete! %d topic subscriptions deleted.', $total, 'bbpress' ), bbp_number_format( $total ) );
+	$result = sprintf( _n( 'Complete! %d topic subscription deleted.', 'Complete! %d topic subscriptions deleted.', $total, 'bbpress' ), $total );
 
 	return array( 0, sprintf( $statement, $result ) );
 }
@@ -672,7 +626,7 @@ function bbp_admin_upgrade_remove_forum_subscriptions_from_usermeta() {
 	$total = count( $subs );
 
 	// Complete results
-	$result = sprintf( _n( 'Complete! %d forum subscription deleted.', 'Complete! %d forum subscriptions deleted.', $total, 'bbpress' ), bbp_number_format( $total ) );
+	$result = sprintf( _n( 'Complete! %d forum subscription deleted.', 'Complete! %d forum subscriptions deleted.', $total, 'bbpress' ), $total );
 
 	return array( 0, sprintf( $statement, $result ) );
 }

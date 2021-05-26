@@ -635,7 +635,7 @@ function bbp_user_profile_edit_url( $user_id = 0, $user_nicename = '' ) {
 
 		// Pretty permalinks
 		if ( bbp_use_pretty_urls() ) {
-			$url = trailingslashit( $profile_url ) . bbp_get_edit_slug();
+			$url = trailingslashit( $profile_url ) . 'edit';
 			$url = user_trailingslashit( $url );
 
 		// Unpretty permalinks
@@ -1387,8 +1387,8 @@ function bbp_notice_edit_user_pending_email() {
 
 	// Check for pending email address change
 	$user_id   = bbp_get_displayed_user_id();
-	$key       = '_new_email';
-	$new_email = get_user_meta( $user_id, $key, true );
+	$key       = $user_id . '_new_email';
+	$new_email = get_option( $key );
 
 	// Bail if no pending email address change
 	if ( empty( $new_email['newemail'] ) ) {
@@ -1397,10 +1397,10 @@ function bbp_notice_edit_user_pending_email() {
 
 	// Build the nonced URL to dismiss the pending change
 	$user_url = bbp_get_user_profile_edit_url( $user_id );
-	$nonce    = "dismiss-{$user_id}{$key}";
+	$nonce    = "dismiss-{$key}";
 	$args     = array(
 		'action'  => 'bbp-update-user-email',
-		'dismiss' => "{$user_id}{$key}"
+		'dismiss' => $key
 	);
 
 	// Build the variables to pass into printf()
@@ -1969,7 +1969,7 @@ function bbp_author_link( $args = array() ) {
 			'link_title' => '',
 			'type'       => 'both',
 			'size'       => 80,
-			'sep'        => ''
+			'sep'        => '&nbsp;'
 		), 'get_author_link' );
 
 		// Confirmed topic
@@ -2289,7 +2289,7 @@ function bbp_current_user_can_access_create_reply_form() {
 		$retval = true;
 
 	// Looking at a single topic, topic is open, and forum is open
-	} elseif ( ( bbp_is_single_topic() || is_page() || is_single() ) && bbp_is_topic_open() && bbp_is_forum_open() && bbp_is_topic_published() ) {
+	} elseif ( ( bbp_is_single_topic() || is_page() || is_single() ) && bbp_is_topic_open() && bbp_is_forum_open() ) {
 		$retval = bbp_current_user_can_publish_replies();
 
 	// User can edit this reply

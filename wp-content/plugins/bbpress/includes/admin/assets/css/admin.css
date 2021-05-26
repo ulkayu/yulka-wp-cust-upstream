@@ -33,11 +33,11 @@
 	display: block;
 }
 
-.bbp-bee::before {
+.bbp-bee:before {
 	content: "\f451";
 }
 
-.bbp-hive::before {
+.bbp-hive:before {
 	content: "\f449";
 }
 
@@ -59,7 +59,7 @@
 	font: 400 24px/1 dashicons !important;
 }
 
-.notice-bbpress .bbpress-logo-icon::before {
+.notice-bbpress .bbpress-logo-icon:before {
 	content: "\f477";
 	color: #555;
 }
@@ -118,29 +118,29 @@ body.rtl .about-wrap .bbp-badge {
 
 /* Dashicons */
 
-th .bbp_forums_column::before,
-#dashboard_right_now a.bbp-glance-forums::before,
-#adminmenu #menu-posts-forum .wp-menu-image::before {
+th .bbp_forums_column:before,
+#dashboard_right_now a.bbp-glance-forums:before,
+#adminmenu #menu-posts-forum .wp-menu-image:before {
 	content: "\f449";
 }
 
-th .bbp_topics_column::before,
-#dashboard_right_now a.bbp-glance-topics::before,
-#adminmenu #menu-posts-topic .wp-menu-image::before {
+th .bbp_topics_column:before,
+#dashboard_right_now a.bbp-glance-topics:before,
+#adminmenu #menu-posts-topic .wp-menu-image:before {
 	content: "\f450";
 }
 
-th .bbp_replies_column::before,
-#dashboard_right_now a.bbp-glance-replies::before,
-#adminmenu #menu-posts-reply .wp-menu-image::before {
+th .bbp_replies_column:before,
+#dashboard_right_now a.bbp-glance-replies:before,
+#adminmenu #menu-posts-reply .wp-menu-image:before {
 	content: "\f451";
 }
 
-#dashboard_right_now a.bbp-glance-topic-tags::before {
+#dashboard_right_now a.bbp-glance-topic-tags:before {
 	content: "\f323";
 }
 
-#dashboard_right_now a.bbp-glance-users::before {
+#dashboard_right_now a.bbp-glance-users:before {
 	content: "\f110";
 }
 
@@ -151,9 +151,9 @@ th .bbp_replies_column {
 	width: 16px;
 }
 
-th .bbp_forums_column::before,
-th .bbp_topics_column::before,
-th .bbp_replies_column::before {
+th .bbp_forums_column:before,
+th .bbp_topics_column:before,
+th .bbp_replies_column:before {
 	font: 400 20px/0.5 dashicons;
 	speak: none;
 	display: inline-block;
@@ -452,8 +452,7 @@ body.post-type-reply #the-list .row-actions .approved a {
 }
 
 #bbp-converter-monitor .inside {
-	margin: 0;
-	padding: 5px;
+	margin-bottom: 0;
 	border-bottom: 1px solid #e5e5e5;
 }
 
@@ -581,11 +580,11 @@ button.bbp-db-pass-toggle:hover {
 	color: #888;
 }
 
-button.bbp-db-pass-toggle.text::after {
+button.bbp-db-pass-toggle.text:after {
 	content: "\f530";
 }
 
-button.bbp-db-pass-toggle.password::after {
+button.bbp-db-pass-toggle.password:after {
 	content: "\f177";
 }
 
@@ -613,41 +612,4 @@ button.bbp-db-pass-toggle.password::after {
 
 td.bbp-tool-title strong {
 	display: block;
-}
-
-td.bbp-tool-title p {
-	margin: 0;
-}
-
-.manage-column.column-components {
-	width: 20%;
-}
-
-.manage-column.column-version {
-	width: 11%;
-}
-
-.manage-column.column-overhead {
-	width: 13%;
-}
-
-.nav-tab-wrapper a span.awaiting-mod {
-	display: inline-block;
-	vertical-align: top;
-	margin: 3px 0 0 1px;
-	padding: 0 5px;
-	min-width: 7px;
-	height: 17px;
-	border-radius: 11px;
-	background-color: #ca4a1f;
-	color: #fff;
-	font-size: 9px;
-	line-height: 17px;
-	text-align: center;
-	z-index: 26;
-}
-
-/* Retro TV corners for contributor avatars */
-.dashboard_page_bbp-credits .wp-person img {
-	border-radius: 20px;
 }

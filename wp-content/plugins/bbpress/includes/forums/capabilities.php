@@ -69,7 +69,7 @@ function bbp_map_forum_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 
 				// Bail if no post ID
 				if ( empty( $args[0] ) ) {
-					break;
+					return $caps;
 				}
 
 				// Get the post.
@@ -108,6 +108,27 @@ function bbp_map_forum_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 
 			break;
 
+		/** Moderating ********************************************************/
+
+		case 'moderate_forum' :
+
+			// Bail if no post ID
+			if ( empty( $args[0] ) ) {
+				return $caps;
+			}
+
+			// Get the post.
+			$_post = get_post( $args[0] );
+			if ( ! empty( $_post ) && bbp_allow_forum_mods() ) {
+
+				// Make sure feature is enabled & user is mod on this forum
+				if ( bbp_is_object_of_user( $_post->ID, $user_id, '_bbp_moderator_id' ) ) {
+					$caps = array( 'spectate' );
+				}
+			}
+
+			break;
+
 		/** Publishing ********************************************************/
 
 		case 'publish_forums'  :
@@ -141,7 +162,7 @@ function bbp_map_forum_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 
 			// Bail if no post ID
 			if ( empty( $args[0] ) ) {
-				break;
+				return $caps;
 			}
 
 			// Get the post.
@@ -178,7 +199,7 @@ function bbp_map_forum_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 
 			// Bail if no post ID
 			if ( empty( $args[0] ) ) {
-				break;
+				return $caps;
 			}
 
 			// Get the post.
@@ -229,7 +250,7 @@ function bbp_map_forum_meta_caps( $caps = array(), $cap = '', $user_id = 0, $arg
 function bbp_is_user_forum_moderator( $user_id = 0, $forum_id = 0 ) {
 	$user_id  = bbp_get_user_id( $user_id, false, empty( $user_id ) );
 	$forum_id = bbp_get_forum_id( $forum_id );
-	$retval   = user_can( $user_id, 'moderate', $forum_id );
+	$retval   = user_can( $user_id, 'moderate_forum', $forum_id );
 
 	// Filter & return
 	return (bool) apply_filters( 'bbp_is_user_forum_moderator', $retval, $user_id, $forum_id );

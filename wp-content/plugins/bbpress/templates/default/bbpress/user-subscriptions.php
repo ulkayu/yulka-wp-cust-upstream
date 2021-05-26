@@ -29,7 +29,10 @@ do_action( 'bbp_template_before_user_subscriptions' ); ?>
 
 				<?php else : ?>
 
-					<?php bbp_get_template_part( 'feedback', 'no-forums' ); ?>
+					<p><?php bbp_is_user_home()
+						? esc_html_e( 'You are not currently subscribed to any forums.',      'bbpress' )
+						: esc_html_e( 'This user is not currently subscribed to any forums.', 'bbpress' );
+					?></p>
 
 				<?php endif; ?>
 

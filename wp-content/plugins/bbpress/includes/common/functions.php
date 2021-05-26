@@ -236,8 +236,12 @@ function bbp_past_edit_lock( $datetime = '', $utc = true ) {
 			$past_time = strtotime( $datetime, $cur_time );
 			$diff_time = ( $lock_time - $past_time ) - $duration;
 
+			// 0 minutes set, so allow editing forever
+			if ( 0 === $minutes ) {
+				$retval = false;
+
 			// Check if less than lock time
-			if ( $diff_time < $duration ) {
+			} elseif ( $diff_time < $duration ) {
 				$retval = false;
 			}
 		}
@@ -403,7 +407,7 @@ function bbp_get_statistics( $args = array() ) {
 				: '';
 
 			$topic_titles[] = ! empty( $topics['private'] )
-				? ''//sprintf( esc_html__( 'Private: %s', 'bbpress' ), bbp_number_format_i18n( $topics['private'] ) )
+				? sprintf( esc_html__( 'Private: %s', 'bbpress' ), bbp_number_format_i18n( $topics['private'] ) )
 				: '';
 
 			$topic_titles[] = ! empty( $topics['spammed'] )
@@ -459,7 +463,6 @@ function bbp_get_statistics( $args = array() ) {
 			$reply_titles[] = ! empty( $replies['pending'] )
 				? sprintf( esc_html__( 'Pending: %s', 'bbpress' ), bbp_number_format_i18n( $replies['pending'] ) )
 				: '';
-
 			$reply_titles[] = ! empty( $replies['private'] )
 				? sprintf( esc_html__( 'Private: %s', 'bbpress' ), bbp_number_format_i18n( $replies['private'] ) )
 				: '';
@@ -642,11 +645,7 @@ function bbp_update_anonymous_post_author( $post_id = 0, $anonymous_data = array
 
 	// Update all anonymous metas
 	foreach ( $r as $anon_key => $anon_value ) {
-
-		// Update, or delete if empty
-		! empty( $anon_value )
-			? update_post_meta( $post_id, '_' . $anon_key, (string) $anon_value, false )
-			: delete_post_meta( $post_id, '_' . $anon_key );
+		update_post_meta( $post_id, '_' . $anon_key, (string) $anon_value, false );
 	}
 }
 
@@ -965,7 +964,7 @@ function bbp_check_for_moderation( $anonymous_data = array(), $author_id = 0, $t
  * @deprecated 2.6.0 Use bbp_check_for_moderation() with strict flag set
  */
 function bbp_check_for_blacklist( $anonymous_data = array(), $author_id = 0, $title = '', $content = '' ) {
-	return bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, true );
+	return bbp_check_for_moderation( $anonymous_data, $author_id, $title, $content, false );
 }
 
 /** Subscriptions *************************************************************/
@@ -1029,11 +1028,6 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 		return false;
 	}
 
-	// Bail if importing
-	if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
-		return false;
-	}
-
 	/** Validation ************************************************************/
 
 	$reply_id = bbp_get_reply_id( $reply_id );
@@ -1069,7 +1063,7 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 	}
 
 	// Dedicated filter to manipulate user ID's to send emails to
-	$user_ids = (array) apply_filters( 'bbp_topic_subscription_user_ids', $user_ids, $reply_id, $topic_id );
+	$user_ids = (array) apply_filters( 'bbp_topic_subscription_user_ids', $user_ids );
 
 	// Bail of the reply author was the only one subscribed.
 	if ( empty( $user_ids ) ) {
@@ -1091,11 +1085,10 @@ function bbp_notify_topic_subscribers( $reply_id = 0, $topic_id = 0, $forum_id =
 	bbp_remove_all_filters( 'the_title'             );
 
 	// Strip tags from text and setup mail data
-	$blog_name         = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
-	$topic_title       = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
-	$reply_author_name = wp_specialchars_decode( strip_tags( $reply_author_name ), ENT_QUOTES );
-	$reply_content     = wp_specialchars_decode( strip_tags( bbp_get_reply_content( $reply_id ) ), ENT_QUOTES );
-	$reply_url         = bbp_get_reply_url( $reply_id );
+	$blog_name     = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$topic_title   = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
+	$reply_content = wp_specialchars_decode( strip_tags( bbp_get_reply_content( $reply_id ) ), ENT_QUOTES );
+	$reply_url     = bbp_get_reply_url( $reply_id );
 
 	// For plugins to filter messages per reply/topic/user
 	$message = sprintf( esc_html__( '%1$s wrote:
@@ -1128,9 +1121,6 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 
 	/** Headers ***************************************************************/
 
-	// Default bbPress X-header
-	$headers    = array( bbp_get_email_header() );
-
 	// Get the noreply@ address
 	$no_reply   = bbp_get_do_not_reply_address();
 
@@ -1138,7 +1128,7 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	$from_email = apply_filters( 'bbp_subscription_from_email', $no_reply );
 
 	// Setup the From header
-	$headers[]  = 'From: ' . get_bloginfo( 'name' ) . ' <' . $from_email . '>';
+	$headers = array( 'From: ' . get_bloginfo( 'name' ) . ' <' . $from_email . '>' );
 
 	// Loop through addresses
 	foreach ( (array) $email_addresses as $address ) {
@@ -1151,13 +1141,11 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	$headers  = apply_filters( 'bbp_subscription_mail_headers', $headers  );
  	$to_email = apply_filters( 'bbp_subscription_to_email',     $no_reply );
 
-	// Before
 	do_action( 'bbp_pre_notify_subscribers', $reply_id, $topic_id, $user_ids );
 
 	// Send notification email
 	wp_mail( $to_email, $subject, $message, $headers );
 
-	// After
 	do_action( 'bbp_post_notify_subscribers', $reply_id, $topic_id, $user_ids );
 
 	// Restore previously removed filters
@@ -1197,11 +1185,6 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 		return false;
 	}
 
-	// Bail if importing
-	if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
-		return false;
-	}
-
 	/** Validation ************************************************************/
 
 	$topic_id = bbp_get_topic_id( $topic_id );
@@ -1236,7 +1219,7 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 	}
 
 	// Dedicated filter to manipulate user ID's to send emails to
-	$user_ids = (array) apply_filters( 'bbp_forum_subscription_user_ids', $user_ids, $topic_id, $forum_id );
+	$user_ids = (array) apply_filters( 'bbp_forum_subscription_user_ids', $user_ids );
 
 	// Bail of the reply author was the only one subscribed.
 	if ( empty( $user_ids ) ) {
@@ -1258,11 +1241,10 @@ function bbp_notify_forum_subscribers( $topic_id = 0, $forum_id = 0, $anonymous_
 	bbp_remove_all_filters( 'the_title'             );
 
 	// Strip tags from text and setup mail data
-	$blog_name         = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
-	$topic_title       = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
-	$topic_author_name = wp_specialchars_decode( strip_tags( $topic_author_name ), ENT_QUOTES );
-	$topic_content     = wp_specialchars_decode( strip_tags( bbp_get_topic_content( $topic_id ) ), ENT_QUOTES );
-	$topic_url         = get_permalink( $topic_id );
+	$blog_name     = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$topic_title   = wp_specialchars_decode( strip_tags( bbp_get_topic_title( $topic_id ) ), ENT_QUOTES );
+	$topic_content = wp_specialchars_decode( strip_tags( bbp_get_topic_content( $topic_id ) ), ENT_QUOTES );
+	$topic_url     = get_permalink( $topic_id );
 
 	// For plugins to filter messages per reply/topic/user
 	$message = sprintf( esc_html__( '%1$s wrote:
@@ -1295,9 +1277,6 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 
 	/** Headers ***************************************************************/
 
-	// Default bbPress X-header
-	$headers    = array( bbp_get_email_header() );
-
 	// Get the noreply@ address
 	$no_reply   = bbp_get_do_not_reply_address();
 
@@ -1305,7 +1284,7 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	$from_email = apply_filters( 'bbp_subscription_from_email', $no_reply );
 
 	// Setup the From header
-	$headers[] = 'From: ' . get_bloginfo( 'name' ) . ' <' . $from_email . '>';
+	$headers = array( 'From: ' . get_bloginfo( 'name' ) . ' <' . $from_email . '>' );
 
 	// Loop through addresses
 	foreach ( (array) $email_addresses as $address ) {
@@ -1318,13 +1297,11 @@ Login and visit the topic to unsubscribe from these emails.', 'bbpress' ),
 	$headers  = apply_filters( 'bbp_subscription_mail_headers', $headers  );
 	$to_email = apply_filters( 'bbp_subscription_to_email',     $no_reply );
 
-	// Before
 	do_action( 'bbp_pre_notify_forum_subscribers', $topic_id, $forum_id, $user_ids );
 
 	// Send notification email
 	wp_mail( $to_email, $subject, $message, $headers );
 
-	// After
 	do_action( 'bbp_post_notify_forum_subscribers', $topic_id, $forum_id, $user_ids );
 
 	// Restore previously removed filters
@@ -1422,81 +1399,6 @@ function bbp_get_email_addresses_from_user_ids( $user_ids = array() ) {
 
 	// Filter & return
 	return apply_filters( 'bbp_get_email_addresses_from_user_ids', $retval, $user_ids, $limit );
-}
-
-/**
- * Automatically splits bbPress emails with many Bcc recipients into chunks.
- *
- * This middleware is useful because topics and forums with many subscribers
- * run into problems with Bcc limits, and many hosting companies & third-party
- * services limit the size of a Bcc audience to prevent spamming.
- *
- * The default "chunk" size is 40 users per iteration, and can be filtered if
- * desired. A future version of bbPress will introduce a setting to more easily
- * tune this.
- *
- * @since 2.6.0 bbPress (r6918)
- *
- * @param array $args Original arguments passed to wp_mail().
- * @return array
- */
-function bbp_chunk_emails( $args = array() ) {
-
-	// Get the maximum number of Bcc's per chunk
-	$max_num = apply_filters( 'bbp_get_bcc_chunk_limit', 40, $args );
-
-	// Look for "bcc: " in a case-insensitive way, and split into 2 sets
-	$match       = '/^bcc: (\w+)/i';
-	$old_headers = preg_grep( $match, $args['headers'], PREG_GREP_INVERT );
-	$bcc_headers = preg_grep( $match, $args['headers'] );
-
-	// Bail if less than $max_num recipients
-	if ( empty( $bcc_headers ) || ( count( $bcc_headers ) < $max_num ) ) {
-		return $args;
-	}
-
-	// Reindex the headers arrays
-	$old_headers = array_values( $old_headers );
-	$bcc_headers = array_values( $bcc_headers );
-
-	// Break the Bcc emails into chunks
-	foreach ( array_chunk( $bcc_headers, $max_num ) as $i => $chunk ) {
-
-		// Skip the first chunk (it will get used in the original wp_mail() call)
-		if ( 0 === $i ) {
-			$first_chunk = $chunk;
-			continue;
-		}
-
-		// Send out the chunk
-		$chunk_headers = array_merge( $old_headers, $chunk );
-
-		// Recursion alert, but should be OK!
-		wp_mail(
-			$args['to'],
-			$args['subject'],
-			$args['message'],
-			$chunk_headers,
-			$args['attachments']
-		);
-	}
-
-	// Set headers to old headers + the $first_chunk of Bcc's
-	$args['headers'] = array_merge( $old_headers, $first_chunk );
-
-	// Return the reduced args, with the first chunk of Bcc's
-	return $args;
-}
-
-/**
- * Return the string used for the bbPress specific X-header.
- *
- * @since 2.6.0 bbPress (r6919)
- *
- * @return string
- */
-function bbp_get_email_header() {
-	return apply_filters( 'bbp_get_email_header', 'X-bbPress: ' . bbp_get_version() );
 }
 
 /** Login *********************************************************************/
@@ -1664,24 +1566,12 @@ function bbp_get_public_child_last_id( $parent_id = 0, $post_type = 'post' ) {
 		return false;
 	}
 
-	// Which statuses
-	switch ( $post_type ) {
+	// Get the public posts status
+	$post_status = array( bbp_get_public_status_id() );
 
-		// Forum
-		case bbp_get_forum_post_type() :
-			$post_status = bbp_get_public_forum_statuses();
-			break;
-
-		// Topic
-		case bbp_get_topic_post_type() :
-			$post_status = bbp_get_public_topic_statuses();
-			break;
-
-		// Reply
-		case bbp_get_reply_post_type() :
-		default :
-			$post_status = bbp_get_public_reply_statuses();
-			break;
+	// Add closed status if topic post type
+	if ( bbp_get_topic_post_type() === $post_type ) {
+		$post_status[] = bbp_get_closed_status_id();
 	}
 
 	$query = new WP_Query( array(
@@ -1835,7 +1725,7 @@ function bbp_get_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 
 		// Forum
 		case bbp_get_forum_post_type() :
-			$post_status = bbp_get_public_forum_statuses();
+			$post_status = array( bbp_get_public_status_id() );
 			break;
 
 		// Topic
@@ -1881,7 +1771,7 @@ function bbp_get_non_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 
 		// Forum
 		case bbp_get_forum_post_type() :
-			$post_status = bbp_get_non_public_forum_statuses();
+			$post_status = array( bbp_get_private_status_id(), bbp_get_hidden_status_id() );
 			break;
 
 		// Topic
@@ -1891,12 +1781,8 @@ function bbp_get_non_public_child_count( $parent_id = 0, $post_type = 'post' ) {
 
 		// Reply
 		case bbp_get_reply_post_type() :
-			$post_status = bbp_get_non_public_reply_statuses();
-			break;
-
-		// Any
 		default :
-			$post_status = bbp_get_public_status_id();
+			$post_status = bbp_get_non_public_reply_statuses();
 			break;
 	}
 
@@ -1928,24 +1814,12 @@ function bbp_get_public_child_ids( $parent_id = 0, $post_type = 'post' ) {
 		return array();
 	}
 
-	// Which statuses
-	switch ( $post_type ) {
+	// Get the public post status
+	$post_status = array( bbp_get_public_status_id() );
 
-		// Forum
-		case bbp_get_forum_post_type() :
-			$post_status = bbp_get_public_forum_statuses();
-			break;
-
-		// Topic
-		case bbp_get_topic_post_type() :
-			$post_status = bbp_get_public_topic_statuses();
-			break;
-
-		// Reply
-		case bbp_get_reply_post_type() :
-		default :
-			$post_status = bbp_get_public_reply_statuses();
-			break;
+	// Add closed status if topic post type
+	if ( bbp_get_topic_post_type() === $post_type ) {
+		$post_status[] = bbp_get_closed_status_id();
 	}
 
 	$query = new WP_Query( array(
@@ -1967,11 +1841,7 @@ function bbp_get_public_child_ids( $parent_id = 0, $post_type = 'post' ) {
 		'ignore_sticky_posts'    => true,
 		'no_found_rows'          => true
 	) );
-
-	$child_ids = ! empty( $query->posts )
-		? $query->posts
-		: array();
-
+	$child_ids = ! empty( $query->posts ) ? $query->posts : array();
 	unset( $query );
 
 	// Filter & return
@@ -1995,25 +1865,17 @@ function bbp_get_all_child_ids( $parent_id = 0, $post_type = 'post' ) {
 		return array();
 	}
 
-	// Make cache key
-	$not_in = array( 'draft', 'future' );
-	$key    = md5( serialize( array(
-		'parent_id'   => $parent_id,
-		'post_type'   => $post_type,
-		'post_status' => $not_in
-	) ) );
-
-	// Check last changed
+	// Check cache key
+	$key          = md5( serialize( array( 'parent_id' => $parent_id, 'post_type' => $post_type ) ) );
 	$last_changed = wp_cache_get_last_changed( 'bbpress_posts' );
 	$cache_key    = "bbp_child_ids:{$key}:{$last_changed}";
 
 	// Check for cache and set if needed
 	$child_ids = wp_cache_get( $cache_key, 'bbpress_posts' );
-
-	// Not already cached
 	if ( false === $child_ids ) {
 
 		// Join post statuses to specifically exclude together
+		$not_in      = array( 'draft', 'future' );
 		$post_status = "'" . implode( "', '", $not_in ) . "'";
 		$bbp_db      = bbp_db();
 
@@ -2618,9 +2480,6 @@ function bbp_get_url_scheme() {
 
 /**
  * Is a title longer that the maximum title length?
- *
- * Uses mb_strlen() in `8bit` mode to treat strings as raw. This matches the
- * behavior present in Comments, PHPMailer, RandomCompat, and others.
  *
  * @since 2.6.0 bbPress (r6783)
  *

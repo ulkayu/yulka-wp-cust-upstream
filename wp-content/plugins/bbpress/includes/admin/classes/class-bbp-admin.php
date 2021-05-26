@@ -106,14 +106,10 @@ class BBP_Admin {
 		$bbp              = bbpress();
 		$this->admin_dir  = trailingslashit( $bbp->includes_dir . 'admin'      ); // Admin path
 		$this->admin_url  = trailingslashit( $bbp->includes_url . 'admin'      ); // Admin url
-
-		// Assets
+		$this->images_url = trailingslashit( $this->admin_url   . 'images'     ); // Admin images URL
+		$this->styles_url = trailingslashit( $this->admin_url   . 'styles'     ); // Admin styles URL
 		$this->css_url    = trailingslashit( $this->admin_url   . 'assets/css' ); // Admin css URL
 		$this->js_url     = trailingslashit( $this->admin_url   . 'assets/js'  ); // Admin js URL
-		$this->styles_url = trailingslashit( $this->admin_url   . 'styles'     ); // Admin styles URL
-
-		// Deprecated
-		$this->images_url = trailingslashit( $this->admin_url   . 'images'     ); // Admin images URL
 	}
 
 	/**
@@ -160,25 +156,18 @@ class BBP_Admin {
 
 		/** General Actions ***************************************************/
 
-		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             ) );
-		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) );
-		add_action( 'bbp_register_admin_styles',   array( $this, 'register_admin_styles'   ) );
-		add_action( 'bbp_register_admin_scripts',  array( $this, 'register_admin_scripts'  ) );
-		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' ) );
-
-		// Enqueue styles & scripts
-		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_styles'  ) );
-		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_scripts' ) );
+		add_action( 'bbp_admin_menu',              array( $this, 'admin_menus'             ) ); // Add menu item to settings menu
+		add_action( 'bbp_admin_head',              array( $this, 'admin_head'              ) ); // Add general styling to the admin area
+		add_action( 'bbp_register_admin_style',    array( $this, 'register_admin_style'    ) ); // Add green admin style
+		add_action( 'bbp_register_admin_settings', array( $this, 'register_admin_settings' ) ); // Add settings
+		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_styles'          ) ); // Add enqueued CSS
+		add_action( 'admin_enqueue_scripts',       array( $this, 'enqueue_scripts'         ) ); // Add enqueued JS
 
 		/** Notices ***********************************************************/
 
 		add_action( 'bbp_admin_init',    array( $this, 'setup_notices'  ) );
 		add_action( 'bbp_admin_init',    array( $this, 'hide_notices'   ) );
 		add_action( 'bbp_admin_notices', array( $this, 'output_notices' ) );
-
-		/** Upgrades **********************************************************/
-
-		add_action( 'bbp_admin_init', array( $this, 'add_upgrade_count' ) );
 
 		/** Ajax **************************************************************/
 
@@ -220,22 +209,20 @@ class BBP_Admin {
 			$this->notices = array();
 		}
 
-		// Get page
-		$page = ! empty( $_GET['page'] )
-			? sanitize_key( $_GET['page'] )
-			: false;
+		// Database upgrade skipped?
+		$skipped = get_option( '_bbp_db_upgrade_skipped', 0 );
 
-		// Pending database upgrades!
-		if ( ( 'bbp-upgrade' !== $page ) && bbp_get_pending_upgrades() && current_user_can( 'bbp_tools_upgrade_page' ) ) {
+		// Database upgrade skipped!
+		if ( ! empty( $skipped ) && ( $skipped < 260 ) && current_user_can( 'bbp_tools_upgrade_page' ) ) {
 
 			// Link to upgrade page
-			$upgrade_url  = add_query_arg( array( 'page' => 'bbp-upgrade', 'status' => 'pending' ), admin_url( 'tools.php' ) );
-			$dismiss_url  = wp_nonce_url( add_query_arg( array( 'bbp-hide-notice' => 'bbp-skip-upgrades' ) ), 'bbp-hide-notice' );
-			$upgrade_link = '<a href="' . esc_url( $upgrade_url ) . '">' . esc_html__( 'Learn More',   'bbpress' ) . '</a>';
-			$dismiss_link = '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Hide For Now', 'bbpress' ) . '</a>';
+			$upgrade_url  = add_query_arg( array( 'page' => 'bbp-upgrade' ), admin_url( 'tools.php' ) );
+			$dismiss_url  = wp_nonce_url( add_query_arg( array( 'bbp-hide-notice' => 'bbp-skip-upgrade' ) ), 'bbp-hide-notice' );
+			$upgrade_link = '<a href="' . esc_url( $upgrade_url ) . '">' . esc_html__( 'Go Upgrade',   'bbpress' ) . '</a>';
+			$dismiss_link = '<a href="' . esc_url( $dismiss_url ) . '">' . esc_html__( 'Hide Forever', 'bbpress' ) . '</a>';
 			$bbp_dashicon = '<span class="bbpress-logo-icon"></span>';
 			$message      = $bbp_dashicon . sprintf(
-				esc_html__( 'bbPress requires a manual database upgrade. %s or %s.', 'bbpress' ),
+				esc_html__( 'bbPress requires a manual database upgrade. %s or %s', 'bbpress' ),
 				$upgrade_link,
 				$dismiss_link
 			);
@@ -252,13 +239,8 @@ class BBP_Admin {
 	 */
 	public function hide_notices() {
 
-		// Hiding a notice?
-		$hiding_notice = ! empty( $_GET['bbp-hide-notice'] )
-			? sanitize_key( $_GET['bbp-hide-notice'] )
-			: false;
-
 		// Bail if not hiding a notice
-		if ( empty( $hiding_notice ) ) {
+		if ( empty( $_GET['bbp-hide-notice'] ) ) {
 			return;
 		}
 
@@ -271,11 +253,11 @@ class BBP_Admin {
 		check_admin_referer( 'bbp-hide-notice' );
 
 		// Maybe delete notices
-		switch ( $hiding_notice ) {
+		switch ( $_GET['bbp-hide-notice'] ) {
 
 			// Skipped upgrade notice
-			case 'bbp-skip-upgrades' :
-				bbp_clear_pending_upgrades();
+			case 'bbp-skip-upgrade' :
+				delete_option( '_bbp_db_upgrade_skipped' );
 				break;
 		}
 	}
@@ -380,46 +362,10 @@ class BBP_Admin {
 	 * @return string
 	 */
 	private function esc_notice( $message = '' ) {
-
-		// Get allowed HTML
 		$tags = wp_kses_allowed_html();
-
-		// Allow spans with classes in notices
-		$tags['span'] = array(
-			'class' => 1
-		);
-
-		// Parse the message and remove unsafe tags
 		$text = wp_kses( $message, $tags );
 
-		// Return the message text
 		return $text;
-	}
-
-	/**
-	 * Maybe append the pending upgrade count to the "Tools" menu.
-	 *
-	 * @since 2.6.0 bbPress (r6896)
-	 *
-	 * @global menu $menu
-	 */
-	public function add_upgrade_count() {
-		global $menu;
-
-		// Skip if no menu (AJAX, shortinit, etc...)
-		if ( empty( $menu ) ) {
-			return;
-		}
-
-		// Loop through menus, and maybe add the upgrade count
-		foreach ( $menu as $menu_index => $menu_item ) {
-			$found = array_search( 'tools.php', $menu_item, true );
-
-			if ( false !== $found ) {
-				$menu[ $menu_index ][ 0 ] = bbp_maybe_append_pending_upgrade_count( $menu[ $menu_index ][ 0 ] );
-				continue;
-			}
-		}
 	}
 
 	/**
@@ -429,43 +375,38 @@ class BBP_Admin {
 	 */
 	public function admin_menus() {
 
-		// Default hooks array
 		$hooks = array();
 
 		// Get the tools pages
 		$tools = bbp_get_tools_admin_pages();
 
 		// Loop through tools and check
-		if ( ! empty( $tools ) ) {
-			foreach ( $tools as $tool ) {
+		foreach ( $tools as $tool ) {
 
-				// Try to add the admin page
-				$page = add_management_page(
-					$tool['name'],
-					$tool['name'],
-					$tool['cap'],
-					$tool['page'],
-					$tool['func']
-				);
+			// Try to add the admin page
+			$page = add_management_page(
+				$tool['name'],
+				$tool['name'],
+				$tool['cap'],
+				$tool['page'],
+				$tool['func']
+			);
 
-				// Add page to hook if user can view it
-				if ( false !== $page ) {
-					$hooks[] = $page;
-				}
+			// Add page to hook if user can view it
+			if ( false !== $page ) {
+				$hooks[] = $page;
 			}
+		}
 
-			// Fudge the highlighted subnav item when on a bbPress admin page
-			if ( ! empty( $hooks ) ) {
-				foreach ( $hooks as $hook ) {
-					add_action( "admin_head-{$hook}", 'bbp_tools_modify_menu_highlight' );
-				}
-			}
+		// Fudge the highlighted subnav item when on a bbPress admin page
+		foreach ( $hooks as $hook ) {
+			add_action( "admin_head-{$hook}", 'bbp_tools_modify_menu_highlight' );
 		}
 
 		// Forums Tools Root
 		add_management_page(
 			esc_html__( 'Forums', 'bbpress' ),
-			bbp_maybe_append_pending_upgrade_count( esc_html__( 'Forums', 'bbpress' ) ),
+			esc_html__( 'Forums', 'bbpress' ),
 			'bbp_tools_page',
 			'bbp-repair',
 			'bbp_admin_repair_page'
@@ -738,15 +679,27 @@ class BBP_Admin {
 	 */
 	public function enqueue_scripts() {
 
-		// Get the current screen
-		$current_screen = get_current_screen();
-
 		// Enqueue suggest for forum/topic/reply autocompletes
 		wp_enqueue_script( 'suggest' );
 
+		// Minified
+		$suffix  = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		// Get the version to use for JS
+		$version = bbp_get_version();
+
+		// Footer JS
+		wp_register_script( 'bbp-admin-badge-js',   $this->js_url . 'badge' . $suffix . '.js', array(), $version, true );
+
+		// Header JS
+		wp_register_script( 'bbp-admin-common-js',  $this->js_url . 'common'    . $suffix . '.js', array( 'jquery', 'suggest'              ), $version );
+		wp_register_script( 'bbp-admin-topics-js',  $this->js_url . 'topics'    . $suffix . '.js', array( 'jquery'                         ), $version );
+		wp_register_script( 'bbp-admin-replies-js', $this->js_url . 'replies'   . $suffix . '.js', array( 'jquery', 'suggest'              ), $version );
+		wp_register_script( 'bbp-converter',        $this->js_url . 'converter' . $suffix . '.js', array( 'jquery', 'postbox', 'dashboard' ), $version );
+
 		// Post type checker (only topics and replies)
-		if ( 'post' === $current_screen->base ) {
-			switch ( $current_screen->post_type ) {
+		if ( 'post' === get_current_screen()->base ) {
+			switch ( get_current_screen()->post_type ) {
 				case bbp_get_reply_post_type() :
 				case bbp_get_topic_post_type() :
 
@@ -754,11 +707,11 @@ class BBP_Admin {
 					wp_enqueue_script( 'bbp-admin-common-js' );
 
 					// Topics admin
-					if ( bbp_get_topic_post_type() === $current_screen->post_type ) {
+					if ( bbp_get_topic_post_type() === get_current_screen()->post_type ) {
 						wp_enqueue_script( 'bbp-admin-topics-js' );
 
 					// Replies admin
-					} elseif ( bbp_get_reply_post_type() === $current_screen->post_type ) {
+					} elseif ( bbp_get_reply_post_type() === get_current_screen()->post_type ) {
 						wp_enqueue_script( 'bbp-admin-replies-js' );
 					}
 
@@ -766,7 +719,7 @@ class BBP_Admin {
 			}
 
 		// Enqueue the badge JS
-		} elseif ( in_array( $current_screen->id, array( 'dashboard_page_bbp-about', 'dashboard_page_bbp-credits' ), true ) ) {
+		} elseif ( in_array( get_current_screen()->id, array( 'dashboard_page_bbp-about', 'dashboard_page_bbp-credits' ), true ) ) {
 			wp_enqueue_script( 'bbp-admin-badge-js' );
 		}
 	}
@@ -777,6 +730,15 @@ class BBP_Admin {
 	 * @since 2.6.0 bbPress (r5224)
 	 */
 	public function enqueue_styles() {
+
+		// RTL and/or minified
+		$suffix  = is_rtl() ? '-rtl' : '';
+		$suffix .= defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		// Register admin CSS with dashicons dependency
+		wp_register_style( 'bbp-admin-css', $this->css_url . 'admin' . $suffix . '.css', array( 'dashicons' ), bbp_get_version() );
+
+		// Enqueue
 		wp_enqueue_style( 'bbp-admin-css' );
 	}
 
@@ -799,29 +761,24 @@ class BBP_Admin {
 	}
 
 	/**
-	 * Registers the bbPress admin styling and color schemes
+	 * Registers the bbPress admin color scheme
 	 *
-	 * Because wp-content can exist outside of the WordPress root, there is no
-	 * way to be certain what the relative path of admin images is.
+	 * Because wp-content can exist outside of the WordPress root there is no
+	 * way to be certain what the relative path of the admin images is.
+	 * We are including the two most common configurations here, just in case.
 	 *
-	 * @since 2.6.0 bbPress (r2521)
+	 * @since 2.0.0 bbPress (r2521)
 	 */
-	public function register_admin_styles() {
-
-		// RTL and/or minified
-		$suffix  = is_rtl() ? '-rtl' : '';
-		$suffix .= defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-		// Get the version to use for JS
-		$version = bbp_get_version();
-
-		// Register admin CSS with dashicons dependency
-		wp_register_style( 'bbp-admin-css', $this->css_url . 'admin' . $suffix . '.css', array( 'dashicons' ), $version );
+	public function register_admin_style() {
 
 		// Color schemes are not available when running out of src
 		if ( false !== strpos( plugin_basename( bbpress()->file ), 'src' ) ) {
 			return;
 		}
+
+		// RTL and/or minified
+		$suffix  = is_rtl() ? '-rtl' : '';
+		$suffix .= defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
 
 		// Mint
 		wp_admin_css_color(
@@ -840,33 +797,6 @@ class BBP_Admin {
 			array( '#324d3a', '#446950', '#56b274', '#324d3a' ),
 			array( 'base' => '#f1f3f2', 'focus' => '#fff', 'current' => '#fff' )
 		);
-	}
-
-	/**
-	 * Registers the bbPress admin color schemes
-	 *
-	 * Because wp-content can exist outside of the WordPress root there is no
-	 * way to be certain what the relative path of the admin images is.
-	 * We are including the two most common configurations here, just in case.
-	 *
-	 * @since 2.6.0 bbPress (r2521)
-	 */
-	public function register_admin_scripts() {
-
-		// Minified
-		$suffix  = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-		// Get the version to use for JS
-		$version = bbp_get_version();
-
-		// Header JS
-		wp_register_script( 'bbp-admin-common-js',  $this->js_url . 'common'    . $suffix . '.js', array( 'jquery', 'suggest'              ), $version );
-		wp_register_script( 'bbp-admin-topics-js',  $this->js_url . 'topics'    . $suffix . '.js', array( 'jquery'                         ), $version );
-		wp_register_script( 'bbp-admin-replies-js', $this->js_url . 'replies'   . $suffix . '.js', array( 'jquery', 'suggest'              ), $version );
-		wp_register_script( 'bbp-converter',        $this->js_url . 'converter' . $suffix . '.js', array( 'jquery', 'postbox', 'dashboard' ), $version );
-
-		// Footer JS
-		wp_register_script( 'bbp-admin-badge-js',   $this->js_url . 'badge' . $suffix . '.js', array(), $version, true );
 	}
 
 	/**
@@ -968,8 +898,7 @@ class BBP_Admin {
 	private function screen_header() {
 		list( $display_version ) = explode( '-', bbp_get_version() ); ?>
 
-		<h1 class="wp-heading-inline"><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
-		<hr class="wp-header-end">
+		<h1><?php printf( esc_html__( 'Welcome to bbPress %s', 'bbpress' ), $display_version ); ?></h1>
 		<div class="about-text"><?php printf( esc_html__( 'bbPress is fun to use, contains no artificial colors or preservatives, and is absolutely wonderful in every environment. Your community is going to love using it.', 'bbpress' ), $display_version ); ?></div>
 
 		<span class="bbp-hive" id="bbp-hive"></span>
@@ -1101,7 +1030,7 @@ class BBP_Admin {
 			<h3 class="wp-people-group"><?php esc_html_e( 'Contributing Developers', 'bbpress' ); ?></h3>
 			<ul class="wp-people-group " id="wp-people-group-contributing-developers">
 				<li class="wp-person" id="wp-person-sergeybiryukov">
-					<a href="https://profiles.wordpress.org/SergeyBiryukov" class="web"><img src="http://0.gravatar.com/avatar/750b7b0fcd855389264c2b1294d61bd6?s=120" class="gravatar" alt="" />Sergey Biryukov</a>
+					<a href="https://profiles.wordpress.org/SergeyBiryukov" class="web"><img src="http://0.gravatar.com/avatar/750b7b0fcd855389264c2b1294d61bd6?s?s=120" class="gravatar" alt="" />Sergey Biryukov</a>
 					<span class="title"><?php esc_html_e( 'Core Developer', 'bbpress' ); ?></span>
 				</li>
 				<li class="wp-person" id="wp-person-thebrandonallen">
@@ -1207,8 +1136,7 @@ class BBP_Admin {
 		$action = isset( $_GET['action'] ) ? $_GET['action'] : ''; ?>
 
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Update Forum', 'bbpress' ); ?></h1>
-			<hr class="wp-header-end">
+			<h1><?php esc_html_e( 'Update Forum', 'bbpress' ); ?></h1>
 
 		<?php
 
@@ -1251,8 +1179,7 @@ class BBP_Admin {
 		$action = isset( $_GET['action'] ) ? $_GET['action'] : ''; ?>
 
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Update Forums', 'bbpress' ); ?></h1>
-			<hr class="wp-header-end">
+			<h1><?php esc_html_e( 'Update Forums', 'bbpress' ); ?></h1>
 
 		<?php
 

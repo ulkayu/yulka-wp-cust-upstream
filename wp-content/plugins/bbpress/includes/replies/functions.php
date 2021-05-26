@@ -26,6 +26,7 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
 	// Parse arguments against default values
 	$reply_data = bbp_parse_args( $reply_data, array(
 		'post_parent'    => 0, // topic ID
+		'post_status'    => bbp_get_public_status_id(),
 		'post_type'      => bbp_get_reply_post_type(),
 		'post_author'    => bbp_get_current_user_id(),
 		'post_password'  => '',
@@ -34,11 +35,6 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
 		'menu_order'     => bbp_get_topic_reply_count( $reply_data['post_parent'], true ) + 1,
 		'comment_status' => 'closed'
 	), 'insert_reply' );
-
-	// Possibly override status based on parent topic
-	if ( ! empty( $reply_data['post_parent'] ) && empty( $reply_data['post_status'] ) ) {
-		$reply_data['post_status'] = bbp_get_topic_status( $reply_data['post_parent'] );
-	}
 
 	// Insert reply
 	$reply_id = wp_insert_post( $reply_data, false );
@@ -99,15 +95,14 @@ function bbp_insert_reply( $reply_data = array(), $reply_meta = array() ) {
  */
 function bbp_insert_reply_update_counts( $reply_id = 0, $topic_id = 0, $forum_id = 0 ) {
 
-	// If the reply is public, update the reply counts.
+	// If the reply is public, update the forum/topic reply counts.
 	if ( bbp_is_reply_published( $reply_id ) ) {
 		bbp_increase_topic_reply_count( $topic_id );
 		bbp_increase_forum_reply_count( $forum_id );
 
-	// If the reply isn't public only update the reply hidden counts.
+	// If the reply isn't public only update the topic reply hidden count.
 	} else {
 		bbp_increase_topic_reply_count_hidden( $topic_id );
-		bbp_increase_forum_reply_count_hidden( $forum_id );
 	}
 }
 
@@ -319,7 +314,7 @@ function bbp_new_reply_handler( $action = '' ) {
 	/** Reply Status **********************************************************/
 
 	// Maybe put into moderation
-	if ( bbp_is_topic_pending( $topic_id ) || ! bbp_check_for_moderation( $anonymous_data, $reply_author, $reply_title, $reply_content ) ) {
+	if ( ! bbp_check_for_moderation( $anonymous_data, $reply_author, $reply_title, $reply_content ) ) {
 		$reply_status = bbp_get_pending_status_id();
 
 	// Default
@@ -830,21 +825,15 @@ function bbp_update_reply( $reply_id = 0, $topic_id = 0, $forum_id = 0, $anonymo
 
 	// Handle Subscription Checkbox
 	if ( bbp_is_subscriptions_active() && ! empty( $author_id ) && ! empty( $topic_id ) ) {
-
-		// Check if subscribed
 		$subscribed = bbp_is_user_subscribed( $author_id, $topic_id );
-
-		// Check for action
-		$subscheck  = ( ! empty( $_POST['bbp_topic_subscription'] ) && ( 'bbp_subscribe' === $_POST['bbp_topic_subscription'] ) )
-			? true
-			: false;
+		$subscheck  = ( ! empty( $_POST['bbp_topic_subscription'] ) && ( 'bbp_subscribe' === $_POST['bbp_topic_subscription'] ) ) ? true : false;
 
 		// Subscribed and unsubscribing
-		if ( ( true === $subscribed ) && ( false === $subscheck ) ) {
+		if ( true === $subscribed && false === $subscheck ) {
 			bbp_remove_user_subscription( $author_id, $topic_id );
 
-		// Not subscribed and subscribing
-		} elseif ( ( false === $subscribed ) && ( true === $subscheck ) ) {
+		// Subscribing
+		} elseif ( false === $subscribed && true === $subscheck ) {
 			bbp_add_user_subscription( $author_id, $topic_id );
 		}
 	}
@@ -924,23 +913,21 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
 			// Topic meta relating to most recent reply
 			} elseif ( bbp_is_topic( $ancestor ) ) {
 
-				// Only update if reply is published
-				if ( ! bbp_is_reply_pending( $reply_id ) ) {
+				// Last reply and active ID's
+				bbp_update_topic_last_reply_id ( $ancestor, $reply_id  );
+				bbp_update_topic_last_active_id( $ancestor, $active_id );
 
-					// Last reply and active ID's
-					bbp_update_topic_last_reply_id ( $ancestor, $reply_id  );
-					bbp_update_topic_last_active_id( $ancestor, $active_id );
-
-					// Get the last active time if none was passed
-					$topic_last_active_time = $last_active_time;
-					if ( empty( $last_active_time ) ) {
-						$topic_last_active_time = get_post_field( 'post_date', bbp_get_topic_last_active_id( $ancestor ) );
-					}
-
-					bbp_update_topic_last_active_time( $ancestor, $topic_last_active_time );
+				// Get the last active time if none was passed
+				$topic_last_active_time = $last_active_time;
+				if ( empty( $last_active_time ) ) {
+					$topic_last_active_time = get_post_field( 'post_date', bbp_get_topic_last_active_id( $ancestor ) );
 				}
 
-				// Only update reply count if we've deleted a reply
+				// Update the topic last active time regardless of reply status.
+				// See https://bbpress.trac.wordpress.org/ticket/2838
+				bbp_update_topic_last_active_time( $ancestor, $topic_last_active_time );
+
+				// Only update reply count if we're deleting a reply, or in the dashboard.
 				if ( in_array( current_filter(), array( 'bbp_deleted_reply', 'save_post' ), true ) ) {
 					bbp_update_topic_reply_count(        $ancestor );
 					bbp_update_topic_reply_count_hidden( $ancestor );
@@ -950,26 +937,26 @@ function bbp_update_reply_walker( $reply_id, $last_active_time = '', $forum_id =
 			// Forum meta relating to most recent topic
 			} elseif ( bbp_is_forum( $ancestor ) ) {
 
+				// Last topic and reply ID's
+				bbp_update_forum_last_topic_id( $ancestor, $topic_id );
+				bbp_update_forum_last_reply_id( $ancestor, $reply_id );
+
+				// Last Active
+				bbp_update_forum_last_active_id( $ancestor, $active_id );
+
+				// Get the last active time if none was passed
+				$forum_last_active_time = $last_active_time;
+				if ( empty( $last_active_time ) ) {
+					$forum_last_active_time = get_post_field( 'post_date', bbp_get_forum_last_active_id( $ancestor ) );
+				}
+
 				// Only update if reply is published
-				if ( bbp_is_reply_pending( $reply_id ) && ! bbp_is_topic_pending( $topic_id ) ) {
-
-					// Last topic and reply ID's
-					bbp_update_forum_last_topic_id( $ancestor, $topic_id );
-					bbp_update_forum_last_reply_id( $ancestor, $reply_id );
-
-					// Last Active
-					bbp_update_forum_last_active_id( $ancestor, $active_id );
-
-					// Get the last active time if none was passed
-					$forum_last_active_time = $last_active_time;
-					if ( empty( $last_active_time ) ) {
-						$forum_last_active_time = get_post_field( 'post_date', bbp_get_forum_last_active_id( $ancestor ) );
-					}
-
+				if ( bbp_is_reply_published( $reply_id ) ) {
 					bbp_update_forum_last_active_time( $ancestor, $forum_last_active_time );
 				}
 
-				// Only update reply count if we've deleted a reply
+				// Counts
+				// Only update reply count if we're deleting a reply, or in the dashboard.
 				if ( in_array( current_filter(), array( 'bbp_deleted_reply', 'save_post' ), true ) ) {
 					bbp_update_forum_reply_count( $ancestor );
 				}
@@ -1486,13 +1473,13 @@ function bbp_toggle_reply_handler( $action = '' ) {
 	// Make sure reply exists
 	$reply = bbp_get_reply( $reply_id );
 	if ( empty( $reply ) ) {
-		bbp_add_error( 'bbp_toggle_reply_missing', __( '<strong>ERROR</strong>: This reply could not be found or no longer exists.', 'bbpress' ) );
+		bbp_add_error( 'bbp_toggle_reply_missing', __( '<strong>ERROR:</strong> This reply could not be found or no longer exists.', 'bbpress' ) );
 		return;
 	}
 
 	// What is the user doing here?
 	if ( ! current_user_can( 'edit_reply', $reply_id ) || ( 'bbp_toggle_reply_trash' === $action && ! current_user_can( 'delete_reply', $reply_id ) ) ) {
-		bbp_add_error( 'bbp_toggle_reply_permission', __( '<strong>ERROR</strong>: You do not have permission to do that.', 'bbpress' ) );
+		bbp_add_error( 'bbp_toggle_reply_permission', __( '<strong>ERROR:</strong> You do not have permission to do that.', 'bbpress' ) );
 		return;
 	}
 
@@ -1666,40 +1653,6 @@ function bbp_get_reply_toggles( $reply_id = 0 ) {
 		'bbp_toggle_reply_trash',
 		'bbp_toggle_reply_approve'
 	), $reply_id );
-}
-
-/**
- * Return array of public reply statuses.
- *
- * @since 2.6.0 bbPress (r6705)
- *
- * @return array
- */
-function bbp_get_public_reply_statuses() {
-	$statuses = array(
-		bbp_get_public_status_id()
-	);
-
-	// Filter & return
-	return (array) apply_filters( 'bbp_get_public_reply_statuses', $statuses );
-}
-
-/**
- * Return array of non-public reply statuses.
- *
- * @since 2.6.0 bbPress (r6791)
- *
- * @return array
- */
-function bbp_get_non_public_reply_statuses() {
-	$statuses = array(
-		bbp_get_trash_status_id(),
-		bbp_get_spam_status_id(),
-		bbp_get_pending_status_id()
-	);
-
-	// Filter & return
-	return (array) apply_filters( 'bbp_get_non_public_reply_statuses', $statuses );
 }
 
 /** Reply Actions *************************************************************/
@@ -2386,7 +2339,7 @@ function bbp_list_replies( $args = array() ) {
 
 	// Parse arguments
 	$r = bbp_parse_args( $args, array(
-		'walker'       => new BBP_Walker_Reply(),
+		'walker'       => new BBP_Walker_Reply,
 		'max_depth'    => bbp_thread_replies_depth(),
 		'style'        => 'ul',
 		'callback'     => null,

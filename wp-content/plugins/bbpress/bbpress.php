@@ -5,7 +5,7 @@
  *
  * bbPress is forum software with a twist from the creators of WordPress.
  *
- * $Id: bbpress.php 7062 2020-01-30 12:32:42Z johnjamesjacoby $
+ * $Id: bbpress.php 6878 2018-12-05 18:37:32Z johnjamesjacoby $
  *
  * @package bbPress
  * @subpackage Main
@@ -17,7 +17,7 @@
  * Description: bbPress is forum software with a twist from the creators of WordPress.
  * Author:      The bbPress Contributors
  * Author URI:  https://bbpress.org
- * Version:     2.6.4
+ * Version:     2.6-rc-7
  * Text Domain: bbpress
  * Domain Path: /languages/
  * License:     GPLv2 or later (license.txt)
@@ -113,7 +113,7 @@ final class bbPress {
 
 		// Only run these methods if they haven't been ran previously
 		if ( null === $instance ) {
-			$instance = new bbPress();
+			$instance = new bbPress;
 			$instance->setup_environment();
 			$instance->includes();
 			$instance->setup_variables();
@@ -203,8 +203,8 @@ final class bbPress {
 
 		/** Versions **********************************************************/
 
-		$this->version    = '2.6.4';
-		$this->db_version = '263';
+		$this->version    = '2.6-rc-6878';
+		$this->db_version = '262';
 
 		/** Paths *************************************************************/
 
@@ -615,7 +615,7 @@ final class bbPress {
 				'show_in_admin_all_list'    => false,
 				'source'                    => 'bbpress'
 			) )
-		);
+		 );
 
 		// Orphan
 		register_post_status(
@@ -751,24 +751,11 @@ final class bbPress {
 
 		// Define "count" meta-type array
 		$count = array(
-
-			// Counts are always integers
 			'type'              => 'integer',
-
-			// Generic count description
 			'description'       => esc_html__( 'bbPress Item Count', 'bbpress' ),
-
-			// Counts are single values
 			'single'            => true,
-
-			// Counts should be made available in REST
-			'show_in_rest'      => true,
-
-			// Never allow counts to go negative
 			'sanitize_callback' => 'bbp_number_not_negative',
-
-			// All users may update count meta data
-			'auth_callback'     => '__return_true'
+			'show_in_rest'      => true
 		);
 
 		/** Post **************************************************************/
@@ -789,16 +776,6 @@ final class bbPress {
 		// Counts
 		register_meta( 'user', '_bbp_topic_count', $count );
 		register_meta( 'user', '_bbp_reply_count', $count );
-
-		// Activity
-		register_meta( 'user', '_bbp_last_posted', array(
-			'type'              => 'integer',
-			'description'       => esc_html__( 'bbPress User Activity', 'bbpress' ),
-			'single'            => true,
-			'show_in_rest'      => true,
-			'sanitize_callback' => 'bbp_number_not_negative',
-			'auth_callback'     => '__return_true'
-		) );
 	}
 
 	/**
@@ -822,7 +799,7 @@ final class bbPress {
 		$class_name = "BBP_User_Engagements_{$strategy}";
 
 		// Setup the engagements interface
-		$this->engagements = new $class_name();
+		$this->engagements = new $class_name;
 	}
 
 	/**
@@ -899,7 +876,7 @@ final class bbPress {
 
 		// Tertiary Slugs
 		$feed_slug          = 'feed';
-		$edit_slug          = bbp_get_edit_slug();
+		$edit_slug          = 'edit';
 		$paged_slug         = bbp_get_paged_slug();
 		$user_favs_slug     = bbp_get_user_favorites_slug();
 		$user_subs_slug     = bbp_get_user_subscriptions_slug();

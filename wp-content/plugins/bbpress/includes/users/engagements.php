@@ -416,12 +416,6 @@ function bbp_update_topic_engagements( $topic_id = 0 ) {
 
 	// Is a topic
 	} elseif ( bbp_is_topic( $topic_id ) ) {
-
-		// Bail if topic isn't published
-		if ( ! bbp_is_topic_published( $topic_id ) ) {
-			return;
-		}
-
 		$author_id = bbp_get_topic_author_id( $topic_id );
 		$topic_id  = bbp_get_topic_id( $topic_id );
 
@@ -613,7 +607,7 @@ function bbp_favorites_handler( $action = '' ) {
 
 	// Check current user's ability to edit the user
 	} elseif ( ! current_user_can( 'edit_user', $user_id ) ) {
-		bbp_add_error( 'bbp_favorite_permission', __( '<strong>ERROR</strong>: You do not have permission to edit favorites for that user.', 'bbpress' ) );
+		bbp_add_error( 'bbp_favorite_permission', __( '<strong>ERROR</strong>: You do not have permission to edit favorites for that user!.', 'bbpress' ) );
 	}
 
 	// Bail if errors

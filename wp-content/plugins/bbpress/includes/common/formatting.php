@@ -392,7 +392,7 @@ function bbp_make_clickable( $text = '' ) {
 	}
 
 	// Cleanup of accidental links within links
-	return preg_replace( '#(<a([ \r\n\t]+[^>]+?>|>))<a [^>]+?>([^>]+?)</a>([^<]*)</a>#i', "$1$3$4</a>", $r );
+	return preg_replace( '#(<a([ \r\n\t]+[^>]+?>|>))<a [^>]+?>([^>]+?)</a></a>#i', "$1$3</a>", $r );
 }
 
 /**
@@ -468,7 +468,7 @@ function bbp_make_mentions_clickable( $text = '' ) {
 /**
  * Callback to convert mention matches to HTML A tag.
  *
- * @since 2.6.0 bbPress (r6014)
+ * @since 2.6.0 (r6014)
  *
  * @param array $matches Regular expression matches in the current text blob.
  *

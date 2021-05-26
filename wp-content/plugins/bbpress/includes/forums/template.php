@@ -45,38 +45,37 @@ function bbp_get_forum_post_type_labels() {
 
 	// Filter & return
 	return (array) apply_filters( 'bbp_get_forum_post_type_labels', array(
-		'name'                     => esc_attr__( 'Forums',                     'bbpress' ),
-		'menu_name'                => esc_attr__( 'Forums',                     'bbpress' ),
-		'singular_name'            => esc_attr__( 'Forum',                      'bbpress' ),
-		'all_items'                => esc_attr__( 'All Forums',                 'bbpress' ),
-		'add_new'                  => esc_attr__( 'Add New',                    'bbpress' ),
-		'add_new_item'             => esc_attr__( 'Create New Forum',           'bbpress' ),
-		'edit'                     => esc_attr__( 'Edit',                       'bbpress' ),
-		'edit_item'                => esc_attr__( 'Edit Forum',                 'bbpress' ),
-		'new_item'                 => esc_attr__( 'New Forum',                  'bbpress' ),
-		'view'                     => esc_attr__( 'View Forum',                 'bbpress' ),
-		'view_item'                => esc_attr__( 'View Forum',                 'bbpress' ),
-		'view_items'               => esc_attr__( 'View Forums',                'bbpress' ),
-		'search_items'             => esc_attr__( 'Search Forums',              'bbpress' ),
-		'not_found'                => esc_attr__( 'No forums found',            'bbpress' ),
-		'not_found_in_trash'       => esc_attr__( 'No forums found in Trash',   'bbpress' ),
-		'filter_items_list'        => esc_attr__( 'Filter forums list',         'bbpress' ),
-		'items_list'               => esc_attr__( 'Forums list',                'bbpress' ),
-		'items_list_navigation'    => esc_attr__( 'Forums list navigation',     'bbpress' ),
-		'parent_item_colon'        => esc_attr__( 'Parent Forum:',              'bbpress' ),
-		'archives'                 => esc_attr__( 'Forums',                     'bbpress' ),
-		'attributes'               => esc_attr__( 'Forum Attributes',           'bbpress' ),
-		'insert_into_item'         => esc_attr__( 'Insert into forum',          'bbpress' ),
-		'uploaded_to_this_item'    => esc_attr__( 'Uploaded to this forum',     'bbpress' ),
-		'featured_image'           => esc_attr__( 'Forum Image',                'bbpress' ),
-		'set_featured_image'       => esc_attr__( 'Set forum image',            'bbpress' ),
-		'remove_featured_image'    => esc_attr__( 'Remove forum image',         'bbpress' ),
-		'use_featured_image'       => esc_attr__( 'Use as forum image',         'bbpress' ),
-		'item_published'           => esc_attr__( 'Forum published.',           'bbpress' ),
-		'item_published_privately' => esc_attr__( 'Forum published privately.', 'bbpress' ),
-		'item_reverted_to_draft'   => esc_attr__( 'Forum reverted to draft.',   'bbpress' ),
-		'item_scheduled'           => esc_attr__( 'Forum scheduled.',           'bbpress' ),
-		'item_updated'             => esc_attr__( 'Forum updated.',             'bbpress' )
+		'name'                  => esc_attr__( 'Forums',                   'bbpress' ),
+		'menu_name'             => esc_attr__( 'Forums',                   'bbpress' ),
+		'singular_name'         => esc_attr__( 'Forum',                    'bbpress' ),
+		'all_items'             => esc_attr__( 'All Forums',               'bbpress' ),
+		'add_new'               => esc_attr__( 'Add New',                  'bbpress' ),
+		'add_new_item'          => esc_attr__( 'Create New Forum',         'bbpress' ),
+		'edit'                  => esc_attr__( 'Edit',                     'bbpress' ),
+		'edit_item'             => esc_attr__( 'Edit Forum',               'bbpress' ),
+		'new_item'              => esc_attr__( 'New Forum',                'bbpress' ),
+		'view'                  => esc_attr__( 'View Forum',               'bbpress' ),
+		'view_item'             => esc_attr__( 'View Forum',               'bbpress' ),
+		'view_items'            => esc_attr__( 'View Forums',              'bbpress' ),
+		'search_items'          => esc_attr__( 'Search Forums',            'bbpress' ),
+		'not_found'             => esc_attr__( 'No forums found',          'bbpress' ),
+		'not_found_in_trash'    => esc_attr__( 'No forums found in Trash', 'bbpress' ),
+		'filter_items_list'     => esc_attr__( 'Filter forums list',       'bbpress' ),
+		'items_list'            => esc_attr__( 'Forums list',              'bbpress' ),
+		'items_list_navigation' => esc_attr__( 'Forums list navigation',   'bbpress' ),
+		'parent_item_colon'     => esc_attr__( 'Parent Forum:',            'bbpress' ),
+		'all_items'             => esc_attr__( 'All Forums',               'bbpress' ),
+		'archives'              => esc_attr__( 'Forums',                   'bbpress' ),
+		'attributes'            => esc_attr__( 'Forum Attributes',         'bbpress' ),
+		'insert_into_item'      => esc_attr__( 'Insert into forum',        'bbpress' ),
+		'uploaded_to_this_item' => esc_attr__( 'Uploaded to this forum',   'bbpress' ),
+		'featured_image'        => esc_attr__( 'Forum Image',              'bbpress' ),
+		'set_featured_image'    => esc_attr__( 'Set forum image',          'bbpress' ),
+		'remove_featured_image' => esc_attr__( 'Remove forum image',       'bbpress' ),
+		'use_featured_image'    => esc_attr__( 'Use as forum image',       'bbpress' ),
+		'filter_items_list'     => esc_attr__( 'Filter forum list',        'bbpress' ),
+		'items_list_navigation' => esc_attr__( 'Forum list navigation',    'bbpress' ),
+		'items_list'            => esc_attr__( 'Forum list',               'bbpress' )
 	) );
 }
 
@@ -141,8 +140,6 @@ function bbp_has_forums( $args = array() ) {
 		$default_post_parent = bbp_get_forum_id();
 	}
 
-	$default_forum_search = bbp_sanitize_search_request( 'fs' );
-
 	// Default argument array
 	$default = array(
 		'post_type'           => bbp_get_forum_post_type(),
@@ -157,12 +154,6 @@ function bbp_has_forums( $args = array() ) {
 		// Conditionally prime the cache for last active posts
 		'update_post_family_cache' => true
 	);
-
-	// Only add 's' arg if searching for forums
-	// See https://bbpress.trac.wordpress.org/ticket/2607
-	if ( ! empty( $default_forum_search ) ) {
-		$default['s'] = $default_forum_search;
-	}
 
 	// Parse arguments with default forum query for most circumstances
 	$r = bbp_parse_args( $args, $default, 'has_forums' );
@@ -483,10 +474,10 @@ function bbp_forum_last_active_id( $forum_id = 0 ) {
 	 */
 	function bbp_get_forum_last_active_id( $forum_id = 0 ) {
 		$forum_id  = bbp_get_forum_id( $forum_id );
-		$active_id = (int) get_post_meta( $forum_id, '_bbp_last_active_id', true );
+		$active_id = get_post_meta( $forum_id, '_bbp_last_active_id', true );
 
 		// Filter & return
-		return (int) apply_filters( 'bbp_get_forum_last_active_id', $active_id, $forum_id );
+		return (int) apply_filters( 'bbp_get_forum_last_active_id', (int) $active_id, $forum_id );
 	}
 
 /**
@@ -605,20 +596,20 @@ function bbp_forum_parent_id( $forum_id = 0 ) {
 	 */
 	function bbp_get_forum_parent_id( $forum_id = 0 ) {
 		$forum_id  = bbp_get_forum_id( $forum_id );
-		$parent_id = (int) get_post_field( 'post_parent', $forum_id );
+		$parent_id = get_post_field( 'post_parent', $forum_id );
 
 		// Meta-data fallback
 		if ( empty( $parent_id ) ) {
-			$parent_id = (int) get_post_meta( $forum_id, '_bbp_forum_id', true );
+			$parent_id = get_post_meta( $forum_id, '_bbp_forum_id', true );
 		}
 
 		// Filter
 		if ( ! empty( $parent_id ) ) {
-			$parent_id = (int) bbp_get_forum_id( $parent_id );
+			$parent_id = bbp_get_forum_id( $parent_id );
 		}
 
 		// Filter & return
-		return (int) apply_filters( 'bbp_get_forum_parent_id', $parent_id, $forum_id );
+		return (int) apply_filters( 'bbp_get_forum_parent_id', (int) $parent_id, $forum_id );
 	}
 
 /**
@@ -717,7 +708,7 @@ function bbp_list_forums( $args = array() ) {
 		'count_before'     => ' (',
 		'count_after'      => ')',
 		'count_sep'        => ', ',
-		'forum_id'         => bbp_get_forum_id(),
+		'forum_id'         => '',
 		'show_topic_count' => true,
 		'show_reply_count' => true,
 		'echo'             => true,
@@ -788,7 +779,7 @@ function bbp_list_forums( $args = array() ) {
 	$the_list = apply_filters( 'bbp_list_forums', $output, $r, $args );
 
 	// Echo or return the forums list
-	if ( ! empty( $r['echo'] ) ) {
+	if ( true === $r['echo'] ) {
 		echo $the_list;
 	} else {
 		return $the_list;
@@ -867,10 +858,10 @@ function bbp_forum_last_topic_id( $forum_id = 0 ) {
 	 */
 	function bbp_get_forum_last_topic_id( $forum_id = 0 ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
-		$topic_id = (int) get_post_meta( $forum_id, '_bbp_last_topic_id', true );
+		$topic_id = get_post_meta( $forum_id, '_bbp_last_topic_id', true );
 
 		// Filter & return
-		return (int) apply_filters( 'bbp_get_forum_last_topic_id', $topic_id, $forum_id );
+		return (int) apply_filters( 'bbp_get_forum_last_topic_id', (int) $topic_id, $forum_id );
 	}
 
 /**
@@ -993,10 +984,10 @@ function bbp_forum_last_reply_id( $forum_id = 0 ) {
 	 */
 	function bbp_get_forum_last_reply_id( $forum_id = 0 ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
-		$reply_id = (int) get_post_meta( $forum_id, '_bbp_last_reply_id', true );
+		$reply_id = get_post_meta( $forum_id, '_bbp_last_reply_id', true );
 
 		// Filter & return
-		return (int) apply_filters( 'bbp_get_forum_last_reply_id', $reply_id, $forum_id );
+		return (int) apply_filters( 'bbp_get_forum_last_reply_id', (int) $reply_id, $forum_id );
 	}
 
 /**
@@ -1175,13 +1166,13 @@ function bbp_forum_topics_link( $forum_id = 0 ) {
 			: esc_html( $topics );
 
 		// Get deleted topics
-		$deleted_int = bbp_get_forum_topic_count_hidden( $forum_id, false, true );
+		$deleted_int = bbp_get_forum_topic_count_hidden( $forum_id, true  );
 
 		// This forum has hidden topics
 		if ( ! empty( $deleted_int ) && current_user_can( 'edit_others_topics' ) ) {
 
 			// Hidden text
-			$deleted_num = bbp_get_forum_topic_count_hidden( $forum_id, false, false );
+			$deleted_num = bbp_get_forum_topic_count_hidden( $forum_id, false );
 			$extra       = ' ' . sprintf( _n( '(+%s hidden)', '(+%s hidden)', $deleted_int, 'bbpress' ), $deleted_num );
 
 			// Hidden link
@@ -1216,7 +1207,7 @@ function bbp_forum_subforum_count( $forum_id = 0, $integer = false ) {
 	 */
 	function bbp_get_forum_subforum_count( $forum_id = 0, $integer = false ) {
 		$forum_id    = bbp_get_forum_id( $forum_id );
-		$forum_count = (int) get_post_meta( $forum_id, '_bbp_forum_subforum_count', true );
+		$forum_count = get_post_meta( $forum_id, '_bbp_forum_subforum_count', true );
 		$filter      = ( true === $integer )
 			? 'bbp_get_forum_subforum_count_int'
 			: 'bbp_get_forum_subforum_count';
@@ -1250,7 +1241,7 @@ function bbp_forum_topic_count( $forum_id = 0, $total_count = true, $integer = f
 	function bbp_get_forum_topic_count( $forum_id = 0, $total_count = true, $integer = false ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$meta_key = empty( $total_count ) ? '_bbp_topic_count' : '_bbp_total_topic_count';
-		$topics   = (int) get_post_meta( $forum_id, $meta_key, true );
+		$topics   = get_post_meta( $forum_id, $meta_key, true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_topic_count_int'
 			: 'bbp_get_forum_topic_count';
@@ -1284,7 +1275,7 @@ function bbp_forum_reply_count( $forum_id = 0, $total_count = true, $integer = f
 	function bbp_get_forum_reply_count( $forum_id = 0, $total_count = true, $integer = false ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$meta_key = empty( $total_count ) ? '_bbp_reply_count' : '_bbp_total_reply_count';
-		$replies  = (int) get_post_meta( $forum_id, $meta_key, true );
+		$replies  = get_post_meta( $forum_id, $meta_key, true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_reply_count_int'
 			: 'bbp_get_forum_reply_count';
@@ -1319,7 +1310,7 @@ function bbp_forum_post_count( $forum_id = 0, $total_count = true, $integer = fa
 		$forum_id = bbp_get_forum_id( $forum_id );
 		$topics   = bbp_get_forum_topic_count( $forum_id, $total_count, true );
 		$replies  = bbp_get_forum_reply_count( $forum_id, $total_count, true );
-		$retval   = ( $replies + $topics );
+		$retval   = $replies + $topics;
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_post_count_int'
 			: 'bbp_get_forum_post_count';
@@ -1332,72 +1323,31 @@ function bbp_forum_post_count( $forum_id = 0, $total_count = true, $integer = fa
  * and pending topics)
  *
  * @since 2.0.0 bbPress (r2883)
- * @since 2.6.0 bbPress (r6922) Changed function signature to add total counts
  *
- * @param int $forum_id Optional. Forum id
- * @param bool $total_count Optional. To get the total count or normal count?
+ * @param int $forum_id Optional. Topic id
  * @param boolean $integer Optional. Whether or not to format the result
  */
-function bbp_forum_topic_count_hidden( $forum_id = 0, $total_count = true, $integer = null ) {
-	echo bbp_get_forum_topic_count_hidden( $forum_id, $total_count, $integer );
+function bbp_forum_topic_count_hidden( $forum_id = 0, $integer = false ) {
+	echo bbp_get_forum_topic_count_hidden( $forum_id, $integer );
 }
 	/**
 	 * Return total hidden topic count of a forum (hidden includes trashed,
 	 * spammed and pending topics)
 	 *
 	 * @since 2.0.0 bbPress (r2883)
-	 * @since 2.6.0 bbPress (r6922) Changed function signature to add total counts
 	 *
-	 * @param int $forum_id Optional. Forum id
-	 * @param bool $total_count Optional. To get the total count or normal count?
+	 * @param int $forum_id Optional. Topic id
 	 * @param boolean $integer Optional. Whether or not to format the result
 	 * @return int Topic hidden topic count
 	 */
-	function bbp_get_forum_topic_count_hidden( $forum_id = 0, $total_count = true, $integer = null ) {
+	function bbp_get_forum_topic_count_hidden( $forum_id = 0, $integer = false ) {
 		$forum_id = bbp_get_forum_id( $forum_id );
-		$meta_key = empty( $total_count ) ? '_bbp_topic_count_hidden' : '_bbp_topic_reply_count_hidden';
-		$topics   = (int) get_post_meta( $forum_id, $meta_key, true );
+		$topics   = get_post_meta( $forum_id, '_bbp_topic_count_hidden', true );
 		$filter   = ( true === $integer )
 			? 'bbp_get_forum_topic_count_hidden_int'
 			: 'bbp_get_forum_topic_count_hidden';
 
 		return apply_filters( $filter, $topics, $forum_id );
-	}
-
-/**
- * Output total hidden reply count of a forum (hidden includes trashed, spammed,
- * and pending replies)
- *
- * @since 2.6.0 bbPress (r6922)
- *
- * @param int $forum_id Optional. Forum id
- * @param bool $total_count Optional. To get the total count or normal count?
- * @param boolean $integer Optional. Whether or not to format the result
- */
-function bbp_forum_reply_count_hidden( $forum_id = 0, $total_count = true, $integer = false ) {
-	echo bbp_get_forum_reply_count_hidden( $forum_id, $total_count, $integer );
-}
-	/**
-	 * Return total hidden reply count of a forum (hidden includes trashed,
-	 * spammed and pending replies)
-	 *
-	 * @since 2.6.0 bbPress (r6922)
-	 *
-	 * @param int $forum_id Optional. Forum id
-	 * @param bool $total_count Optional. To get the total count or normal
-	 *                           count?
-	 * @param boolean $integer Optional. Whether or not to format the result
-	 * @return int Forum reply count
-	 */
-	function bbp_get_forum_reply_count_hidden( $forum_id = 0, $total_count = true, $integer = false ) {
-		$forum_id = bbp_get_forum_id( $forum_id );
-		$meta_key = empty( $total_count ) ? '_bbp_reply_count_hidden' : '_bbp_total_reply_count_hidden';
-		$replies  = (int) get_post_meta( $forum_id, $meta_key, true );
-		$filter   = ( true === $integer )
-			? 'bbp_get_forum_reply_count_hidden_int'
-			: 'bbp_get_forum_reply_count_hidden';
-
-		return apply_filters( $filter, $replies, $forum_id );
 	}
 
 /**

@@ -108,7 +108,7 @@ function bbp_admin_get_settings_fields() {
 
 		'bbp_settings_users' => array(
 
-			// Default role setting
+			// Allow global access
 			'_bbp_default_role' => array(
 				'sanitize_callback' => 'sanitize_text_field',
 				'args'              => array()
@@ -275,7 +275,7 @@ function bbp_admin_get_settings_fields() {
 
 		'bbp_settings_per_page' => array(
 
-			// Topics per page setting
+			// Replies per page setting
 			'_bbp_topics_per_page' => array(
 				'title'             => esc_html__( 'Topics', 'bbpress' ),
 				'callback'          => 'bbp_admin_setting_callback_topics_per_page',
@@ -296,7 +296,7 @@ function bbp_admin_get_settings_fields() {
 
 		'bbp_settings_per_rss_page' => array(
 
-			// Topics per page setting
+			// Replies per page setting
 			'_bbp_topics_per_rss_page' => array(
 				'title'             => esc_html__( 'Topics', 'bbpress' ),
 				'callback'          => 'bbp_admin_setting_callback_topics_per_rss_page',
@@ -384,14 +384,6 @@ function bbp_admin_get_settings_fields() {
 				'callback'          => 'bbp_admin_setting_callback_reply_slug',
 				'sanitize_callback' => 'bbp_sanitize_slug',
 				'args'              => array( 'label_for'=>'_bbp_reply_slug' )
-			),
-
-			// Edit slug setting
-			'_bbp_edit_slug' => array(
-				'title'             => esc_html__( 'Edit', 'bbpress' ),
-				'callback'          => 'bbp_admin_setting_callback_edit_slug',
-				'sanitize_callback' => 'bbp_sanitize_slug',
-				'args'              => array( 'label_for'=>'_bbp_edit_slug' )
 			),
 
 			// Search slug setting
@@ -535,7 +527,7 @@ function bbp_admin_get_settings_fields() {
 				'args'              => array( 'label_for'=> '_bbp_converter_db_user' )
 			),
 
-			// Database Password
+			// Database User
 			'_bbp_converter_db_pass' => array(
 				'title'             => esc_html__( 'Database Password', 'bbpress' ),
 				'callback'          => 'bbp_converter_setting_callback_dbpass',
@@ -543,7 +535,7 @@ function bbp_admin_get_settings_fields() {
 				'args'              => array( 'label_for'=> '_bbp_converter_db_pass' )
 			),
 
-			// Database Prefix
+			// Database User
 			'_bbp_converter_db_prefix' => array(
 				'title'             => esc_html__( 'Table Prefix', 'bbpress' ),
 				'callback'          => 'bbp_converter_setting_callback_dbprefix',
@@ -1284,7 +1276,7 @@ function bbp_admin_setting_callback_user_engagements_slug() {
 function bbp_admin_setting_callback_single_slug_section() {
 ?>
 
-	<p><?php printf( esc_html__( 'Custom slugs for single forums, topics, replies, tags, views, edit, and search.', 'bbpress' ), get_admin_url( null, 'options-permalink.php' ) ); ?></p>
+	<p><?php printf( esc_html__( 'Custom slugs for single forums, topics, replies, tags, views, and search.', 'bbpress' ), get_admin_url( null, 'options-permalink.php' ) ); ?></p>
 
 <?php
 }
@@ -1380,21 +1372,6 @@ function bbp_admin_setting_callback_search_slug() {
 	bbp_form_slug_conflict_check( '_bbp_search_slug', 'search' );
 }
 
-/**
- * Edit slug setting field
- *
- * @since 2.6.2 bbPress (r6965)
- */
-function bbp_admin_setting_callback_edit_slug() {
-?>
-
-	<input name="_bbp_edit_slug" id="_bbp_edit_slug" type="text" class="regular-text code" value="<?php bbp_form_option( '_bbp_edit_slug', 'edit', true ); ?>"<?php bbp_maybe_admin_setting_disabled( '_bbp_edit_slug' ); ?> />
-
-<?php
-	// Slug Check
-	bbp_form_slug_conflict_check( '_bbp_edit_slug', 'edit' );
-}
-
 /** BuddyPress ****************************************************************/
 
 /**
@@ -1405,7 +1382,7 @@ function bbp_admin_setting_callback_edit_slug() {
 function bbp_admin_setting_callback_buddypress_section() {
 ?>
 
-	<p><?php esc_html_e( 'Forum settings for BuddyPress', 'bbpress' ); ?></p>
+	<p><?php esc_html_e( 'Configure how Forum settings for BuddyPress', 'bbpress' ); ?></p>
 
 <?php
 }
@@ -1517,7 +1494,7 @@ function bbp_admin_settings() {
 ?>
 
 	<div class="wrap">
-		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forums Settings', 'bbpress' ) ?></h1>
+		<h1><?php esc_html_e( 'Forums Settings', 'bbpress' ) ?></h1>
 		<hr class="wp-header-end">
 
 		<form action="options.php" method="post">
@@ -1796,9 +1773,9 @@ function bbp_converter_settings_page() {
 		: esc_html__( 'Ready to go.', 'bbpress' ); ?>
 
 	<div class="wrap">
-		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
+		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
 		<hr class="wp-header-end">
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( 'bbp-converter' ); ?></h2>
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Import Forums', 'bbpress' ) ); ?></h2>
 
 		<div class="bbp-converter-wrap">
 			<div id="poststuff" class="bbp-converter-monitor-wrap">
@@ -2046,9 +2023,6 @@ function bbp_form_slug_conflict_check( $slug, $default ) {
 
 			// Reply slug
 			'_bbp_reply_slug'         => array( 'name' => esc_html__( 'Reply slug',  'bbpress' ), 'default' => 'reply',  'context' => 'bbPress' ),
-
-			// Edit slug
-			'_bbp_edit_slug'          => array( 'name' => esc_html__( 'Edit slug',   'bbpress' ), 'default' => 'edit',   'context' => 'bbPress' ),
 
 			// User profile slug
 			'_bbp_user_slug'          => array( 'name' => esc_html__( 'User base',   'bbpress' ), 'default' => 'users',  'context' => 'bbPress' ),

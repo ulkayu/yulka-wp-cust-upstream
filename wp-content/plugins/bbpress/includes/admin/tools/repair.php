@@ -22,32 +22,16 @@ defined( 'ABSPATH' ) || exit;
 function bbp_admin_repair_page() {
 
 	// Get the registered repair tools
-	$tools = bbp_admin_repair_list();
-
-	// Orderby
-	$orderby = ! empty( $_GET['orderby'] )
-		? sanitize_key( $_GET['orderby'] )
-		: 'priority';
-
-	// Order
-	$order = ! empty( $_GET['order'] ) && in_array( strtolower( $_GET['order'] ), array( 'asc', 'desc' ), true )
-		? strtolower( $_GET['order'] )
-		: 'asc';
-
-	// New order
-	$new_order = ( 'desc' === $order )
-		? 'asc'
-		: 'desc'; ?>
+	$tools = bbp_admin_repair_list(); ?>
 
 	<div class="wrap">
-		<h1 class="wp-heading-inline"><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
-		<hr class="wp-header-end">
-		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( 'bbp-repair' ); ?></h2>
+		<h1><?php esc_html_e( 'Forum Tools', 'bbpress' ); ?></h1>
+		<h2 class="nav-tab-wrapper"><?php bbp_tools_admin_tabs( esc_html__( 'Repair Forums', 'bbpress' ) ); ?></h2>
 
 		<p><?php esc_html_e( 'bbPress keeps track of relationships between forums, topics, replies, topic-tags, favorites, subscriptions, and users. Occasionally these relationships become out of sync, most often after an import or migration. Use the tools below to manually recalculate these relationships.', 'bbpress' ); ?></p>
 		<p class="description"><?php esc_html_e( 'Some of these tools create substantial database overhead. Use caution when running more than 1 repair at a time.', 'bbpress' ); ?></p>
 
-		<?php bbp_admin_repair_tool_status_filters(); ?>
+		<?php bbp_admin_repair_tool_overhead_filters(); ?>
 
 		<form class="settings" method="get" action="">
 
@@ -69,7 +53,6 @@ function bbp_admin_repair_page() {
 
 					<?php bbp_admin_repair_list_components_filter(); ?>
 
-					<input type="submit" name="filter_action" id="components-submit" class="button" value="<?php esc_html_e( 'Filter', 'bbpress' ); ?>">
 				</div>
 				<br class="clear">
 			</div>
@@ -82,23 +65,9 @@ function bbp_admin_repair_page() {
 							</label>
 							<input id="cb-select-all-1" type="checkbox">
 						</td>
-						<th scope="col" id="description" class="manage-column column-primary column-description sortable <?php echo ( 'priority' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
-							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
-									'orderby' => 'priority',
-									'order'   => $new_order
-								) ) ); ?>"><span><?php esc_html_e( 'Description', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
-							</a>
-						</th>
-						<th scope="col" id="components" class="manage-column column-components">
-							<span><?php esc_html_e( 'Components', 'bbpress' ); ?></span>
-						</th>
-						<th scope="col" id="overhead" class="manage-column column-overhead sortable <?php echo ( 'overhead' === $orderby ) ? esc_attr( $order ) : 'asc'; ?>">
-							<a href="<?php echo esc_url( bbp_get_admin_repair_tool_page_url( array(
-									'orderby' => 'overhead',
-									'order'   => $new_order
-								) ) ); ?>"><span><?php esc_html_e( 'Overhead', 'bbpress' ); ?></span><span class="sorting-indicator"></span>
-							</a>
-						</th>
+						<th scope="col" id="description" class="manage-column column-primary column-description"><?php esc_html_e( 'Description', 'bbpress' ); ?></th>
+						<th scope="col" id="components" class="manage-column column-components"><?php esc_html_e( 'Components', 'bbpress' ); ?></th>
+						<th scope="col" id="overhead" class="manage-column column-overhead"><?php esc_html_e( 'Overhead', 'bbpress' ); ?></th>
 					</tr>
 				</thead>
 
@@ -118,7 +87,7 @@ function bbp_admin_repair_page() {
 
 										// Optional description
 										if ( ! empty( $item['description'] ) ) :
-											echo '<p class="description">' . esc_html( $item['description'] ) . '</p>';
+											echo esc_html( $item['description'] );
 										endif;
 
 									?><div class="row-actions hide-if-no-js">
@@ -291,7 +260,7 @@ function bbp_admin_repair_topic_voice_count() {
 }
 
 /**
- * Recount non-public replies per topic (pending/spammed/trashed)
+ * Recount topic hidden replies (spammed/trashed)
  *
  * @since 2.0.0 bbPress (r2747)
  *
@@ -442,48 +411,6 @@ function bbp_admin_repair_forum_reply_count() {
 }
 
 /**
- * Recount non-public forum replies
- *
- * @since 2.6.0 bbPress (r6922)
- * @since 2.6.0 bbPress (r6932) Rename to match the topic reply recount function
- *
- * @return array An array of the status code and the message
- */
-function bbp_admin_repair_forum_hidden_reply_count() {
-
-	// Define variables
-	$bbp_db    = bbp_db();
-	$statement = esc_html__( 'Counting the number of pending, spammed, and trashed replies in each forum&hellip; %s', 'bbpress' );
-	$result    = esc_html__( 'Failed!', 'bbpress' );
-
-	// Post type
-	$fpt = bbp_get_forum_post_type();
-
-	// Delete the meta keys _bbp_reply_count and _bbp_total_reply_count for each forum
-	$sql_delete = "DELETE `postmeta` FROM `{$bbp_db->postmeta}` AS `postmeta`
-						LEFT JOIN `{$bbp_db->posts}` AS `posts` ON `posts`.`ID` = `postmeta`.`post_id`
-						WHERE `posts`.`post_type` = '{$fpt}'
-						AND `postmeta`.`meta_key` = '_bbp_reply_count_hidden'
-						OR `postmeta`.`meta_key` = '_bbp_total_reply_count_hidden'";
-
-	if ( is_wp_error( $bbp_db->query( $sql_delete ) ) ) {
- 		return array( 1, sprintf( $statement, $result ) );
-	}
-
-	// Recalculate the metas key _bbp_reply_count and _bbp_total_reply_count for each forum
-	$forums = get_posts( array( 'post_type' => bbp_get_forum_post_type(), 'numberposts' => -1 ) );
-	if ( ! empty( $forums ) ) {
-		foreach ( $forums as $forum ) {
-			bbp_update_forum_reply_count_hidden( $forum->ID );
-		}
-	} else {
-		return array( 2, sprintf( $statement, $result ) );
-	}
-
-	return array( 0, sprintf( $statement, esc_html__( 'Complete!', 'bbpress' ) ) );
-}
-
-/**
  * Recount topics by the users
  *
  * @since 2.1.0 bbPress (r3889)
@@ -619,7 +546,7 @@ function bbp_admin_repair_user_favorites() {
 		}
 
 		$favorites_joined = implode( ',', $favorites );
-		$values[]         = "('{$user->user_id}', '{$key}', '{$favorites_joined}')";
+		$values[]         = "('{$user->user_id}', '{$key}, '{$favorites_joined}')";
 
 		// Cleanup
 		unset( $favorites, $favorites_joined );
@@ -933,7 +860,7 @@ function bbp_admin_repair_freshness() {
 
 	// Now we give all the forums with topics the ID their last topic.
 	if ( is_wp_error( $bbp_db->query( "INSERT INTO `{$bbp_db->postmeta}` (`post_id`, `meta_key`, `meta_value`)
-			( SELECT `forum`.`ID`, '_bbp_last_topic_id', MAX( `topic`.`ID` )
+			( SELECT `forum`.`ID`, '_bbp_last_topic_id', `topic`.`ID`
 			FROM `{$bbp_db->posts}` AS `forum` INNER JOIN `{$bbp_db->posts}` AS `topic` ON `forum`.`ID` = `topic`.`post_parent`
 			WHERE `topic`.`post_status` = '{$pps}' AND `forum`.`post_type` = '{$fpt}' AND `topic`.`post_type` = '{$tpt}'
 			GROUP BY `forum`.`ID` )" ) ) ) {
@@ -1290,6 +1217,8 @@ function bbp_admin_repair_reply_menu_order() {
 	// Cleanup
 	unset( $replies, $reply );
 
-	// Complete results
+	// Flush the cache; things are about to get ugly.
+	wp_cache_flush();
+
 	return array( 0, sprintf( $statement, esc_html__( 'Complete!', 'bbpress' ) ) );
 }
