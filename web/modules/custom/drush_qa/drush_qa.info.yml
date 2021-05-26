@@ -1,0 +1,4 @@
+name: Drush QA
+description: Drush commands helpful for QA/dev/debug
+type: module
+core: 8.x
